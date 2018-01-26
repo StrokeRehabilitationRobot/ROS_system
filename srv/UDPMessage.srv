@@ -1,0 +1,5 @@
+int64 board
+int64 id
+Float32MultiArray downstream
+---
+Float32MultiArray upsteam
