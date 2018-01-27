@@ -1,3 +1,0 @@
-<launch>
-	<node name="hid2udp" pkg="strokeRehab" type="hid2udp.sh" />
-</launch>
