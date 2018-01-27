@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import pi
 import numpy as np
 
@@ -51,3 +52,14 @@ def remap(u):
     tau[1] = -u[1]#np.interp(u[1], j1_oldRange, newRange)
     tau[2] = np.interp(u[2], j2_oldRange, newRange)
     return  tau
+
+
+    # def filter_tau(self,interpolated_tau,i):
+    #     # TODO figure out analog way of interpring torque
+    #     max_tau = [0.6, 0.55, 0.55]
+    #     if interpolated_tau > max_tau[i]:
+    #         return -1
+    #     elif interpolated_tau < min_tau[i]:
+    #         return 1
+    #     else:
+    #         return 0

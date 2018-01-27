@@ -7,20 +7,22 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   genmsg
 )
+catkin_python_setup()
 
 # Generate services in the 'srv' folder
+
 add_service_files(DIRECTORY srv FILES UDPMessage.srv)
+add_message_files(DIRECTORY msg FILES udpMessage.msg)
 
 
 generate_messages(DEPENDENCIES std_msgs)
 
 
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES strokeRehab
-#  CATKIN_DEPENDS roscpp rospy
-#  DEPENDS system_lib
+  INCLUDE_DIRS src/tools
+
 )
+
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}

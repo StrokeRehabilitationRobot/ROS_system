@@ -1,8 +1,7 @@
-
 #!/usr/bin/env python
 
 from tools import dynamics
-from Main.Robot import Robot
+from tools import Robot
 import copy
 import numpy as np
 
