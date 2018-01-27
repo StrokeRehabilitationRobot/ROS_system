@@ -54,12 +54,14 @@ def remap(u):
     return  tau
 
 
-    # def filter_tau(self,interpolated_tau,i):
-    #     # TODO figure out analog way of interpring torque
-    #     max_tau = [0.6, 0.55, 0.55]
-    #     if interpolated_tau > max_tau[i]:
-    #         return -1
-    #     elif interpolated_tau < min_tau[i]:
-    #         return 1
-    #     else:
-    #         return 0
+def filter_tau(interpolated_tau,i):
+    # TODO figure out analog way of interpring torque
+    max_tau = [0.6, 0.55, 0.55]
+    min_tau = [.3, .40, .4]
+
+    if interpolated_tau > max_tau[i]:
+        return -1
+    elif interpolated_tau < min_tau[i]:
+        return 1
+    else:
+        return 0

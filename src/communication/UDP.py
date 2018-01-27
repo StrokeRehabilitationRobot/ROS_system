@@ -27,6 +27,8 @@ class UDP(object):
         :param packet: the packet to sent to the board
         :return: the message from the board
         """
+        packet = list(packet)
+        print self._port
         id_packet = [id]
         board_packet = [board]
         buf = struct.pack('%sf' % len(packet), *packet)
@@ -34,11 +36,12 @@ class UDP(object):
         buf_board = struct.pack('%si' % len(board_packet), *board_packet)
         sent = self._sock.sendto(buf_board+buf_id+buf, self._server_address)
         data, server = self._sock.recvfrom(self._port)
+
         return array.array('f',data )
 
 
 
-    
+
 #
 # udp = UDP(9876)
 #
