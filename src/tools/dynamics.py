@@ -2,15 +2,7 @@ from math import sin as s
 from math import cos as c
 import math
 import numpy as np
-from Main.Robot import Robot
-
-
-
-
-# l = [1, 1, 1]
-# r = [0.5, 0.5, 0.5] # r0 r1 r2
-# m = [1, 1, 1]
-# I = [[1, 1, 1], [1, 1, 1], [1, 1, 1]] # Ix Iy Iz
+from tools import Robot
 
 
 def make_mass_matrix(robot):
@@ -270,9 +262,3 @@ def get_J_tranpose(robot):
     J = J3[0:3, 0:3]
 
     return np.transpose(J)
-
-
-
-
-
-

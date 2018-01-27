@@ -1,6 +1,0 @@
-<launch>
-	<node pkg="strokeRehab" type="hid2udp.sh" 
-	    name="timed_roslaunch" output="screen">
-  	</node>
-		<!-- <include file="$(find strokeRehab)/scripts/hid2udp.sh"/> -->
-</launch>
