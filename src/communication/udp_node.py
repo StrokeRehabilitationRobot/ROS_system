@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from strokeRehab.srv import *
+from strokeRehabSystem.srv import *
 import rospy
 
 udp = None
