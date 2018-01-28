@@ -1,6 +1,6 @@
 from math import pi
 
-from src.tools import helper
+import helper
 
 
 class Robot(object):
@@ -85,7 +85,7 @@ class Robot(object):
         :param updated_tau:
         :param i:
         :return:
-        """     
+        """
         return updated_tau#10*updated_tau - 10*self._torque_offset[i]
 
     def filter_tau(self,interpolated_tau,i):
@@ -96,5 +96,3 @@ class Robot(object):
             return 1
         else:
             return 0
-
-

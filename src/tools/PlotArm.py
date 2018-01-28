@@ -1,7 +1,7 @@
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-plt.ion()
+#plt.ion()
 class PlotArm(object):
 
     def __init__(self):
@@ -26,10 +26,11 @@ class PlotArm(object):
 
 
                 #self.lines.set_zdata(zdata)
+
         xdata = [p_1[0], p_2[0], p_3[0] ]
         ydata = [p_1[1], p_2[1], p_3[1]]
         zdata = [p_1[2], p_2[2], p_3[2]]
-
+        print xdata
         self.lines.set_xdata(xdata)
         self.lines.set_ydata(ydata)
         self.lines.set_3d_properties(zdata)
@@ -57,7 +58,3 @@ class PlotArm(object):
 #     p_3 = (0, 2, 6,)
 #     time.sleep(1)
 #     ploter.update(p_1,p_2,p_3)
-
-
-
-

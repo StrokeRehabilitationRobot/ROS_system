@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from sensor_msgs.msg import JointState
 from strokeRehabSystem.srv import *
 import rospy
 

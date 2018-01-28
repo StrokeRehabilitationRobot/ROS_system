@@ -2,7 +2,9 @@ from math import sin as s
 from math import cos as c
 import math
 import numpy as np
-from tools import Robot
+import Robot
+import helper
+
 
 
 def make_mass_matrix(robot):
@@ -164,16 +166,18 @@ def get_jacobian_matricies(robot):
     return (J_1, J_2, J_3)
 
 
-def fk(robot):
+def fk(joints):
     """
 
     :param robot:
     :return:
     """
-    I, m, l, r = robot.unpack
-    theta_1 = robot.q[0]
-    theta_2 = robot.q[1]
-    theta_3 = robot.q[2]
+    l = helper.get_lengths()
+    print 'l',l
+    print 'theta',joints
+    theta_1 = joints[0]
+    theta_2 = joints[1]
+    theta_3 = joints[2]
 
     pose_1 = (0,0,l[0])
 

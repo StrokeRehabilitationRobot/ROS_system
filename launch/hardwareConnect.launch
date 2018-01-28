@@ -1,7 +1,7 @@
 <launch>
 
 
-    <node pkg="strokeRehabSystem" type="scripts/hid2udp.sh"
+    <node pkg="strokeRehabSystem" type="hid2udp.sh"
 	    name="hid2udp" output="screen">
   	</node>
 

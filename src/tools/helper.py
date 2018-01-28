@@ -65,3 +65,22 @@ def filter_tau(interpolated_tau,i):
         return 1
     else:
         return 0
+
+def get_lengths():
+    lengths = [0.25107, 0.191, 0.37843]
+    return lengths
+
+def get_ineria():
+    inertia = [[0.006757, 0.0006036, 0.0015514],
+               [0.001745, 0.0005596, 0.00006455],
+               [0.00706657, 0.0006254, 0.0015708]
+              ]
+    return inertia
+
+def get_mass():
+    mass = [1.01992, 0.3519, 0.22772]
+    return mass
+
+def get_centriod():
+    centroid = [0.10424, 0.14550, 0.203]
+    return centroid

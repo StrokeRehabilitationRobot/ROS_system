@@ -12,7 +12,7 @@ if __name__ == "__main__":
     msg.id = 37
     msg.board = 0
     msg.packet = 15*[400,0,0]
-    pub = rospy.Publisher('udp', udpMessage, queue_size=10)
+    pub = rospy.Publisher('udp', udpMessage, queue_size=1)
     while 1:
         pub.publish(msg)
-        pass
+        
