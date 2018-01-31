@@ -28,7 +28,7 @@ def callback_udp(downstream):
         qd.append(round(tools.helper.encoder_to_angle(upstream[i * 3 + 2 + 1]), 2))
         tau.append(tools.helper.filter_tau(upstream[i * 3 + 2 + 1], i))
 
-    q[2] -= 0.5 * math.pi
+
 
     state.position = q
     state.velocity = qd
