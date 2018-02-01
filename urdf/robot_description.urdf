@@ -4,66 +4,87 @@
   <link name="base_link">
  <origin xyz="0 0 0 " rpy=" 0 0 0"/>
     <visual>
-      <geometry>
-        <mesh filename="package://strokeRehabSystem/models/ConjoinedBase.dae"/>
-      </geometry>
-      <material name="blue"/>
+
     </visual>
   </link>
 
-  <link name="Link2">
-    <origin xyz="0 -0.06 .159 " rpy=" 0 0 3.14159"/>
+  <link name="Link1">
+    <origin xyz="0 0 0 " rpy=" 0 0 0"/>
     <visual>
-      <geometry>
-        <mesh filename="package://strokeRehabSystem/models/Link2.dae"/>
-      </geometry>
-      <material name="blue"/>
+
     </visual>
   </link>
 
   <joint name="joint0" type="revolute">
-    <origin xyz="0 -0.06 .159" rpy=" 0 0 3.14159"/>
+    <origin xyz="0 0 0" rpy=" 0 0 0"/>
     <parent link="base_link"/>
+    <child link="Link1"/>
+    <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+    <axis xyz = "0 0 1"/>
+  </joint>
+
+  <link name="Link2">
+    <origin xyz="0 0 0 " rpy=" 0 0 0"/>
+     <visual>
+    </visual>
+  </link>
+
+  <joint name="joint1" type="revolute">
+    <origin xyz="0 0 .08" rpy="-1.57 0 0"/>
+    <parent link="Link1"/>
     <child link="Link2"/>
     <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
     <axis xyz = "0 0 1"/>
   </joint>
 
-
-
   <link name="Link3">
-    <origin xyz="0 0 0 " rpy=" 0 0 0"/>
+    <origin xyz=".5 0 0 " rpy=" 0 0 0"/>
      <visual>
-      <geometry>
-        <mesh filename="package://strokeRehabSystem/models/Link3.dae"/>
-      </geometry>
-      <material name="blue"/>
     </visual>
   </link>
 
-  <joint name="joint1" type="revolute">
-    <origin xyz="0.07 0 0" rpy=" 0 0 0"/>
+
+  <joint name="joint2" type="revolute">
+    <origin xyz=".5 0 0" rpy=" 0 0 0"/>
     <parent link="Link2"/>
     <child link="Link3"/>
     <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
-    <axis xyz = "0 1 0"/>
+    <axis xyz = "0 0 1"/>
   </joint>
 
+
   <link name="Link4">
-    <origin xyz="-0.17 -0.025 -.2" rpy=" 0 0 0"/>
+    <origin xyz=".5 0 0 " rpy=" 0 0 0"/>
      <visual>
-      <geometry>
-        <mesh filename="package://strokeRehabSystem/models/Link4.dae"/>
-      </geometry>
-      <material name="blue"/>
     </visual>
   </link>
 
-  <joint name="joint2" type="revolute">
-    <origin xyz="-0.17 -0.025 0" rpy=" 0 0 0"/>
+
+  <joint name="EE" type="fixed">
+    <origin xyz=".5 0 0" rpy=" 0 0 0"/>
     <parent link="Link3"/>
     <child link="Link4"/>
     <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
-    <axis xyz = "0 1 0"/>
+    <axis xyz = "0 0 1"/>
   </joint>
+
+
+  <!-- <link name="EE">
+    <origin xyz="0 0 -.2" rpy=" 0 0 0"/>
+     <visual>
+    </visual>
+  </link>
+
+
+
+  <joint name="EE" type="revolute">
+    <origin xyz="-0.17 -0.025 0" rpy=" 0 0 0"/>
+    <parent link="Link3"/>
+    <child link="EE"/>
+    <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+    <axis xyz = "0 1 0"/>
+  </joint> -->
+
+
+
 </robot>
