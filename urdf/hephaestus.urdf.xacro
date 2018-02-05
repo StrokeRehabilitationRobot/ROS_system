@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+<xacro:macro name="hephaestus" params="prefix reflect">
+
+    <link name="${prefix}_link1">
+        <origin xyz="0 0 0" rpy=" 0 0 0"/>
+        <visual>
+        </visual>
+    </link>
+
+    <joint name="${prefix}_joint0" type="revolute">
+        <parent link="base_link"/>
+        <child link="${prefix}_link1"/>
+        <origin xyz="0 ${reflect*(.5)} 0" />
+        <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+        <axis xyz = "0 0 1"/>
+    </joint>
+
+
+    <link name="${prefix}_link2">
+      <origin xyz="0 0 0 " rpy=" 0 0 0"/>
+       <visual>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_joint1" type="revolute">
+      <origin xyz="0 0 .168" rpy="-1.57 0 0"/>
+      <parent link="${prefix}_link1"/>
+      <child link="${prefix}_link2"/>
+      <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+      <axis xyz = "0 0 1"/>
+    </joint>
+
+    <link name="${prefix}_link3">
+      <origin xyz=".24 0 0 " rpy=" 0 0 0"/>
+       <visual>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_joint2" type="revolute">
+      <origin xyz=".24 0 0" rpy=" 0 0 0"/>
+      <parent link="${prefix}_link2"/>
+      <child link="${prefix}_link3"/>
+      <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+      <axis xyz = "0 0 1"/>
+    </joint>
+
+
+    <link name="${prefix}_EE">
+      <origin xyz="0 0 0 " rpy=" 0 0 0"/>
+       <visual>
+      </visual>
+    </link>
+
+    <joint name="${prefix}_EE" type="fixed">
+      <origin xyz=".24 0 0" rpy=" 0 0 0"/>
+      <parent link="${prefix}_link3"/>
+      <child link="${prefix}_EE"/>
+      <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
+      <axis xyz = "0 0 1"/>
+    </joint>
+</xacro:macro>
+
+</robot>
