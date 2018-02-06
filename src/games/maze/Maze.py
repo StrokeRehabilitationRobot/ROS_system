@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+
 import pygame
 from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
-import Player
+#import Player
 import numpy
 from nav_msgs.msg import OccupancyGrid,Path
 from geometry_msgs.msg import Pose,Point
