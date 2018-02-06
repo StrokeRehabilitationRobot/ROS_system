@@ -21,8 +21,9 @@ generate_messages(DEPENDENCIES std_msgs)
 catkin_package(
   INCLUDE_DIRS src/tools
 
-)
 
+)
+install(PROGRAMS scripts/hid2udp.sh DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}

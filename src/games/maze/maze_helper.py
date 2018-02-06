@@ -33,10 +33,10 @@ def invert(self):
 
 def get_i_j(maze,index):
 
-    N = maze.info.width
+    N = maze.info.height
 
-    i = index/N
-    j = index % N
+    j = index/N
+    i = index % N
     return i,j
      
 
