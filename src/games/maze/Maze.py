@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 import pygame
 from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
-#import Player
+import Player
 import numpy
 from nav_msgs.msg import OccupancyGrid,Path
 from geometry_msgs.msg import Pose,Point
@@ -46,7 +45,7 @@ class Maze:
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.maze_callback)
-
+        rospy.Timer(rospy.Duration(0.1), self.update)
         self._running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
@@ -83,7 +82,7 @@ class Maze:
             self.player_draw()
             pygame.display.update()
 
-            self.pub_player(self.player)
+            self.pub_player.publish(self.player)
             start = self.at_start()
             goal  = self.at_goal()
 
@@ -110,15 +109,14 @@ class Maze:
 
         EE_x = ((arm_translation_x - position[0]) / arm_scale_x) * self.maze.info.width
         EE_y = ((position[1] - arm_translation_y) / arm_scale_y) * self.maze.info.height
-
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
 
         pygame.draw.rect(self.display_surf, GREEN,
-                         (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+                         (round(self.player.x,2), round(self.player.y,2), PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
     def maze_draw(self):
         # Iterate over maze
-        
+
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
 
@@ -139,7 +137,13 @@ class Maze:
         :param path:
         :return:
         """
+        for point in path:
 
+            pixels_x = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
+            #print pixels_x
+            pixels_y = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
+            pygame.draw.rect(self.display_surf, GREEN,
+                             (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
     def at_start(self):
@@ -151,14 +155,14 @@ class Maze:
                      abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
 
         self.pub_start.publish(state)
-        return start.data
+        return state.data
 
     def at_goal(self):
 
         goal = maze_helper.getGoal(self.maze)
         goal_pixels = (goal[0] * BLOCKSIZE_X, goal[1] * BLOCKSIZE_Y)
         state = Bool()
-        goal.data = abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
+        state.data = abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
                     abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
 
         self.pub_goal.publish(state)
@@ -170,4 +174,3 @@ if __name__ == "__main__":
    game = Maze()
    while not rospy.is_shutdown():
        rospy.spin()
-

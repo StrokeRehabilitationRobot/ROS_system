@@ -11,6 +11,6 @@
 </link>
 
 <xacro:hephaestus prefix="master" reflect="1" />
-<xacro:hephaestus prefix="slave" reflect="-1" />
+<!-- <xacro:hephaestus prefix="slave" reflect="-1" /> -->
 
 </robot>
