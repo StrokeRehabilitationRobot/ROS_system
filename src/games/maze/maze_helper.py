@@ -40,7 +40,7 @@ def get_i_j(maze,index):
     return i,j
      
 
-def checkCell(maze, pt):
+def check_cell(maze, pt):
     """
     Check if a cell is a wall or the goal (1 = wall, 2 = goal, 0 = path)
     :param maze:
@@ -87,7 +87,7 @@ def neighbors_euclidean(maze, loc_x, loc_y):
     neighbors = []
     for x in range(loc_x - 1, loc_x + 2):
         for y in range(loc_y - 1, loc_y + 2):
-            if checkCell(maze, x, y) in (0, 2, 3):
+            if check_cell(maze, x, y) in (0, 2, 3):
                 neighbors.append((x, y))
 
     return neighbors
@@ -96,7 +96,7 @@ def neighbors_manhattan(maze,loc_x, loc_y):
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
-        if checkCell(maze, option[0], option[1]) in (0, 2, 3):
+        if check_cell(maze, option[0], option[1]) in (0, 2, 3):
             neighbors_out.append(option)
 
     return neighbors_out
