@@ -7,7 +7,7 @@ import mazeBank
 import Player
 import numpy
 from nav_msgs.msg import OccupancyGrid,Path
-from joint_states_listener.srv import ReturnJointStates
+from strokeRehabSystem.srv import ReturnJointStates
 from geometry_msgs.msg import Pose,Point
 from std_msgs.msg import Bool
 import rospy
@@ -49,7 +49,6 @@ class Maze:
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.maze_callback)
         rospy.Timer(rospy.Duration(0.1), self.update)
-
         self._running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
@@ -107,9 +106,14 @@ class Maze:
         arm_translation_y = 0.15
         arm_scale_y = 0.35
 
-        # self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
-        # (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-        (position, velocity, effort) = call_return_joint_states(joint_names)
+        joint_names = ["master_joint0",
+                       "master_joint1",
+                       "master_joint2"]
+        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
+
+        (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        (position_j, velocity, effort) = self.call_return_joint_states(joint_names)
+
         EE_x = ((arm_translation_x - position[0]) / arm_scale_x) * self.maze.info.width
         EE_y = ((position[1] - arm_translation_y) / arm_scale_y) * self.maze.info.height
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
@@ -118,7 +122,11 @@ class Maze:
                          (round(self.player.x,2), round(self.player.y,2), PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
-    def call_return_joint_states(joint_names):
+
+    def remap(self, x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+    def call_return_joint_states(self,joint_names):
         rospy.wait_for_service("return_joint_states")
         try:
             s = rospy.ServiceProxy("return_joint_states", ReturnJointStates)

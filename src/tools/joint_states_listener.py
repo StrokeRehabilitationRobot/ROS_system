@@ -3,9 +3,9 @@
 #and provides the same information (or subsets of) as a service
 
 import roslib
-roslib.load_manifest('joint_states_listener')
+#roslib.load_manifest('joint_states_listener')
 import rospy
-from joint_states_listener.srv import *
+from strokeRehabSystem.srv import *
 from sensor_msgs.msg import JointState
 import threading
 
