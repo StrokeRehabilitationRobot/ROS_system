@@ -36,28 +36,71 @@ def a_star(maze):
 
     current = goal
     my_path = Path()
-    this_step = PoseStamped()
+    step_index = 0
     while current != start:
-        this_step.pose.position.x = current[0]
-        this_step.pose.position.y = current[1]
-        this_step.pose.position.z = 0
+        my_path.poses.append(PoseStamped())
+        my_path.poses[step_index].pose.position.x = current[0]
+        my_path.poses[step_index].pose.position.y = current[1]
+        my_path.poses[step_index].pose.position.z = 0
         #this_step.header.stamp = rospy.Time.now()
-        my_path.poses.append(this_step)
         current = came_from[current]
-    my_path.poses.append(start) # optional
-    my_path.poses.reverse() # optional
+        step_index += 1
+    my_path.poses.append(PoseStamped())
+    my_path.poses[step_index].pose.position.x = start[0]
+    my_path.poses[step_index].pose.position.y = start[1]
+    my_path.poses[step_index].pose.position.z = 0
+    my_path.poses.reverse()
     #my_path.header.stamp = rospy.Time.now()
     print("Publishing")
     path_pub.publish(my_path)
     print("Published")
 
+    # Break path into segments
+    segment_i = 0
+    segments = [[]]
+    # print my_path.poses
+    for index, step in enumerate(my_path.poses):
+        if index == 0:
+            prev = step
+        else:
+            prev = my_path.poses[index - 1]
+
+        try:
+            next = my_path.poses[index + 1]
+        except IndexError:
+            next = step
+
+        print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
+             % (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
+                next.pose.position.x, next.pose.position.y)
+
+        if (prev is None) or (next is None):
+            print("end-bit")
+            segments[segment_i].append(step.pose)
+        elif (next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
+                or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y):
+            print("straight")
+            segments[segment_i].append(step)
+        else:
+            print("turn")
+            if segments[segment_i] != []:
+                segments.append([])
+                segment_i += 1
+            segments[segment_i].append(prev)
+            segments[segment_i].append(step)
+            segments[segment_i].append(next)
+            segments.append([])
+            segment_i += 1
+
+    print len(segments)
+
 def costmove(current, next, prev):
     if (prev is None) or (next is None):
         return 1
     elif (next[0] == current[0] and current[0] == prev[0]) or (next[1] == current[1] and current[1] == prev[1]):
-        return 5
-    else:
         return 1
+    else:
+        return 5
 
 # def priority_search(maze):
 #     # search best options in grid first
