@@ -53,6 +53,7 @@ class Maze:
         self._odom_list = tf.TransformListener()
         self.player = Point()
         pygame.init()
+        print("Ready to host maze")
 
 
 
@@ -63,8 +64,8 @@ class Maze:
         self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
         pygame.display.set_caption('Travel from Blue Square to Red Square')
         self._running = True
-        self.N = self.maze.info.width  # number of rows
-        self.M = self.maze.info.height  # number of columns
+        self.N = self.maze.info.height  # number of rows
+        self.M = self.maze.info.width  # number of columns
         self.maze_draw()
         #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
         #start_loc_pixels_y = (start[1] * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))

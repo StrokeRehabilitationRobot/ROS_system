@@ -33,7 +33,7 @@ def invert(self):
 
 def get_i_j(maze,index):
 
-    N = maze.info.height
+    N = maze.info.width
 
     j = index/N
     i = index % N
@@ -50,8 +50,10 @@ def check_cell(maze, pt):
     N = maze.info.width
     M = maze.info.height
 
+    if pt not in range(len(maze.data)):
+        return 1
     # If the cell in the maze array is a 1, the cell is a wall
-    if maze.data[pt] == 1:
+    elif maze.data[pt] == 1:
         return 1
     # If the cell in the maze array is a 2, the cell is the starting position
     elif maze.data[pt] == 2:
@@ -80,17 +82,16 @@ def construct_map(maze):
     pass
 
 def index_to_cell(maze,x,y):
+    return maze.info.width*y + x
 
-    return maze.info.width*x + y
-
-def neighbors_euclidean(maze, loc_x, loc_y):
-    neighbors = []
-    for x in range(loc_x - 1, loc_x + 2):
-        for y in range(loc_y - 1, loc_y + 2):
-            if check_cell(maze, index_to_cell(maze, x, y)) in (0, 2, 3):
-                neighbors.append((x, y))
-
-    return neighbors
+# def neighbors_euclidean(maze, loc_x, loc_y):
+#     neighbors = []
+#     for x in range(loc_x - 1, loc_x + 2):
+#         for y in range(loc_y - 1, loc_y + 2):
+#             if check_cell(maze, index_to_cell(maze, x, y)) in (0, 2, 3):
+#                 neighbors.append((x, y))
+#
+#     return neighbors
 
 def neighbors_manhattan(maze,loc_x, loc_y):
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]

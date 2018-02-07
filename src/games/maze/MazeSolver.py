@@ -12,10 +12,11 @@ from pygame.locals import *
 
 
 def a_star(maze):
+    print("Called to solve")
     # find shortest path with fastest search
-    path_pub = rospy.Publisher("a_star", Path)
-    start = maze_helper.getStart(maze)
-    goal = maze_helper.getGoal(maze)
+    path_pub = rospy.Publisher("a_star", Path, queue_size=1)
+    start = maze_helper.getStart(maze) #column, row
+    goal = maze_helper.getGoal(maze) #column, row
     frontier = Queue.PriorityQueue()
     frontier.put(start)
     came_from = {}
@@ -25,11 +26,6 @@ def a_star(maze):
 
     while not frontier.empty():
         current = frontier.get()
-        # print "Visiting (%d, %d)" % (current[0], current[1])
-
-        #if current == goal:
-            #break
-
         for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
             new_cost = cost_so_far[current] + costmove(current, next, came_from[current])
             if next not in cost_so_far:
@@ -37,29 +33,30 @@ def a_star(maze):
                 priority = new_cost + heuristic(goal, next)
                 frontier.put(next, priority)
                 came_from[next] = current
+
     current = goal
-    path = Path()
-    path.header.stamp = rospy.Time.now()
-    step = PoseStamped()
-    step.header.stamp = rospy.Time.now()
+    my_path = Path()
+    this_step = PoseStamped()
     while current != start:
-        step.pose.position.x = current[0]
-        step.pose.position.y = current[1]
-        step.pose.position.z = 0
-        path.poses.append(step)
+        this_step.pose.position.x = current[0]
+        this_step.pose.position.y = current[1]
+        this_step.pose.position.z = 0
+        #this_step.header.stamp = rospy.Time.now()
+        my_path.poses.append(this_step)
         current = came_from[current]
-    path.poses.append(start) # optional
-    path.poses.reverse() # optional
-    path_pub.pub(path)
+    my_path.poses.append(start) # optional
+    my_path.poses.reverse() # optional
+    #my_path.header.stamp = rospy.Time.now()
+    print("Publishing")
+    path_pub.publish(my_path)
+    print("Published")
 
 def costmove(current, next, prev):
     if (prev is None) or (next is None):
         return 1
     elif (next[0] == current[0] and current[0] == prev[0]) or (next[1] == current[1] and current[1] == prev[1]):
-        print('straight')
         return 5
     else:
-        print('turn')
         return 1
 
 # def priority_search(maze):
@@ -108,5 +105,6 @@ def reconstruct_path(came_from, start, goal):
 if __name__ == "__main__":
     rospy.init_node('MazeSolver', anonymous=True)
     rospy.Subscriber("gen_maze", OccupancyGrid, a_star)
+    print("Ready to solve")
     while not rospy.is_shutdown():
        rospy.spin()
