@@ -22,6 +22,7 @@ generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(
   INCLUDE_DIRS src/tools
+  INCLUDE_DIRS src/games
 
 
 )
