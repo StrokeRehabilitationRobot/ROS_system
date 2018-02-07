@@ -28,7 +28,7 @@ def a_star(maze):
         current = frontier.get()
         for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
             new_cost = cost_so_far[current] + costmove(current, next, came_from[current])
-            if next not in cost_so_far:
+            if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
                 priority = new_cost + heuristic(goal, next)
                 frontier.put(next, priority)
