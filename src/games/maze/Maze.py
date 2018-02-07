@@ -7,10 +7,13 @@ import mazeBank
 import Player
 import numpy
 from nav_msgs.msg import OccupancyGrid,Path
+from joint_states_listener.srv import ReturnJointStates
 from geometry_msgs.msg import Pose,Point
 from std_msgs.msg import Bool
 import rospy
 import tf
+import tools.joint_states_listener
+
 # Colors for use throughout
 RED = (255,0,0)
 GREEN = (0,255,0)
@@ -46,6 +49,7 @@ class Maze:
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.maze_callback)
         rospy.Timer(rospy.Duration(0.1), self.update)
+
         self._running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
@@ -92,8 +96,6 @@ class Maze:
         self.maze = msg
         self.on_init()
 
-
-
     def invert(self):
         for index, row in enumerate(self.maze):
             self.maze[index] = row[::-1]
@@ -104,15 +106,29 @@ class Maze:
         arm_translation_y = 0.15
         arm_scale_y = 0.35
 
-        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
-        (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-
+        # self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
+        # (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        (position, velocity, effort) = call_return_joint_states(joint_names)
         EE_x = ((arm_translation_x - position[0]) / arm_scale_x) * self.maze.info.width
         EE_y = ((position[1] - arm_translation_y) / arm_scale_y) * self.maze.info.height
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
 
         pygame.draw.rect(self.display_surf, GREEN,
                          (round(self.player.x,2), round(self.player.y,2), PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+
+
+    def call_return_joint_states(joint_names):
+        rospy.wait_for_service("return_joint_states")
+        try:
+            s = rospy.ServiceProxy("return_joint_states", ReturnJointStates)
+            resp = s(joint_names)
+        except rospy.ServiceException, e:
+            print "error when calling return_joint_states: %s"%e
+            sys.exit(1)
+        for (ind, joint_name) in enumerate(joint_names):
+            if(not resp.found[ind]):
+                print "joint %s not found!"%joint_name
+        return (resp.position, resp.velocity, resp.effort)
 
     def maze_draw(self):
         # Iterate over maze
