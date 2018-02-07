@@ -38,7 +38,7 @@ def get_i_j(maze,index):
     j = index/N
     i = index % N
     return i,j
-     
+
 
 def check_cell(maze, pt):
     """
@@ -96,9 +96,8 @@ def neighbors_manhattan(maze,loc_x, loc_y):
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
-        if check_cell(maze, option[0], option[1]) in (0, 2, 3):
+        pt = index_to_cell(maze,option[0],option[1])
+        if check_cell(maze,pt) in (0, 2, 3):
             neighbors_out.append(option)
 
     return neighbors_out
-
-

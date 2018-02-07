@@ -51,7 +51,9 @@ class Maze:
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
         self._odom_list = tf.TransformListener()
+        self.player_rec = None
         self.player = Point()
+        self.walls = []
         pygame.init()
 
 
@@ -66,9 +68,12 @@ class Maze:
         self.N = self.maze.info.width  # number of rows
         self.M = self.maze.info.height  # number of columns
         self.maze_draw()
+        self.player_draw()
+
         #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
         #start_loc_pixels_y = (start[1] * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
         pygame.display.update()
+
 
 
     def update(self,msg):
@@ -78,7 +83,10 @@ class Maze:
         """
         if self._running:
             self.display_surf.fill((0, 0, 0))
+            self.walls = []
             self.maze_draw()
+            if not self.check_collision():
+                print "boom"
             self.player_draw()
             pygame.display.update()
 
@@ -88,11 +96,19 @@ class Maze:
 
 
 
+    def check_collision(self):
+        print len(self.walls)
+        for wall in self.walls:
+            if self.player_rec.colliderect(wall):
+                #print "player",self.player_rec
+                #print "wall",wall
+                return True
+        print "not wall"
+        return False
+
     def maze_callback(self,msg):
         self.maze = msg
         self.on_init()
-
-
 
     def invert(self):
         for index, row in enumerate(self.maze):
@@ -107,29 +123,47 @@ class Maze:
         self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
         (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
 
-        EE_x = ((arm_translation_x - position[0]) / arm_scale_x) * self.maze.info.width
-        EE_y = ((position[1] - arm_translation_y) / arm_scale_y) * self.maze.info.height
-        (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
+        EE_y = self.remap(position[1], -0.5, 0.5, 0, self.windowHeight)
+        EE_x = self.remap(position[0], 0.15, 0.5, 0, self.windowWidth)
+
+
+
+        (self.player.x, self.player.y) = (EE_y,EE_x)
+
+        self.player_rec = pygame.Rect(self.player.x,self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y)
 
         pygame.draw.rect(self.display_surf, GREEN,
-                         (round(self.player.x,2), round(self.player.y,2), PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+                         (self.player.x,self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+
+
+    def remap(self,x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
 
     def maze_draw(self):
         # Iterate over maze
 
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
-
+            self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
             cell = maze_helper.check_cell(self.maze,index)
             if cell == 1:
                 pygame.draw.rect(self.display_surf, PURPLE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
             elif cell == 2:
                 pygame.draw.rect(self.display_surf, BLUE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
+
+
 
     def path_draw(self,path):
         """

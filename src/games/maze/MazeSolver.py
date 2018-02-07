@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+
 import Queue
 import Maze
 import pygame
 import math
 import maze_helper
-from nav_msgs.msg import Path
+from nav_msgs.msg import Path, OccupancyGrid
 from geometry_msgs.msg import PoseStamped
 import rospy
 from pygame.locals import *
@@ -40,10 +42,12 @@ def a_star(maze):
     path.header.stamp = rospy.Time.now()
     step = PoseStamped()
     step.header.stamp = rospy.Time.now()
+    print came_from
     while current != start:
-        step.pose.positon.x = current[0]
-        step.pose.positon.y = current[1]
-        step.pose.positon.z = 0
+
+        step.pose.position.x = current[0]
+        step.pose.position.y = current[1]
+        step.pose.position.z = 0
         path.poses.append(step)
         current = came_from[current]
     path.poses.append(start) # optional

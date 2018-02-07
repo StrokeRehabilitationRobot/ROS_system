@@ -6,7 +6,7 @@ import mazeBank
 from nav_msgs.msg import OccupancyGrid
 
 
-maze_pub = rospy.Publisher('gen_maze', OccupancyGrid, queue_size=1)
+maze_pub = rospy.Publisher('gen_maze', OccupancyGrid, queue_size=1,latch=True)
 def make_maze(maze):
 
 
@@ -32,4 +32,3 @@ if __name__ == '__main__':
 
     while not rospy.is_shutdown():
         rospy.spin()
-
