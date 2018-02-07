@@ -18,8 +18,8 @@ def make_maze(maze):
     my_maze = OccupancyGrid()
 
     my_maze.data = data
-    my_maze.info.width = row
-    my_maze.info.height = col
+    my_maze.info.width = col
+    my_maze.info.height = row
     my_maze.header.stamp = rospy.Time.now()
     maze_pub.publish(my_maze)
 
