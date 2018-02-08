@@ -1,0 +1,15 @@
+<launch>
+
+
+    
+
+    <node pkg="strokeRehabSystem" type="maze_node.py" name="maze_pub" output="screen">
+    </node>
+
+    <node pkg="strokeRehabSystem" type="MazeSolver.py" name="maze_solver" output="screen">
+    </node>
+    <node pkg="strokeRehabSystem" type="Maze.py" name="maze_game" output="screen">
+    </node>
+
+
+</launch>
