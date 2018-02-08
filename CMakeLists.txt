@@ -14,7 +14,7 @@ catkin_python_setup()
 add_service_files(DIRECTORY srv FILES UDPMessage.srv ReturnJointStates.srv)
 # add_service_files(DIRECTORY srv FILES ReturnJointStates.srv)
 
-add_message_files(DIRECTORY msg FILES udpMessage.msg)
+add_message_files(DIRECTORY msg FILES udpMessage.msg )
 
 
 generate_messages(DEPENDENCIES std_msgs)

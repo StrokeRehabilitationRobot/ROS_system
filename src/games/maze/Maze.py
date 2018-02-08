@@ -118,12 +118,11 @@ class Maze:
 
         # joint names
 
-        joint_names = ["master_joint0",
-                       "master_joint1",
-                       "master_joint2"]
+
 
         # calls the joint state server
-        (position, velocity, effort) = self.call_return_joint_states(joint_names)
+        #(position, velocity, effort) = self.call_return_joint_states(joint_names)
+        (position, velocity, effort) = tools.helper.call_return_joint_states()
         # scales the input to the game
         EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
         EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
@@ -151,6 +150,7 @@ class Maze:
             if(not resp.found[ind]):
                 print "joint %s not found!"%joint_name
         return (resp.position, resp.velocity, resp.effort)
+
 
     def maze_draw(self):
         """
