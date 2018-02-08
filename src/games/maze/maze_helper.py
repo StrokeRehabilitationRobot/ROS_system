@@ -32,6 +32,12 @@ def invert(self):
         self.maze[index] = row[::-1]
 
 def get_i_j(maze,index):
+    """
+    converts 1D to 2D
+    :param maze: occupancy grid mesage
+    :param index: index of 1D array
+    :return: 2 ints of the the 2D array indexs
+    """
 
     N = maze.info.width
 
@@ -43,9 +49,9 @@ def get_i_j(maze,index):
 def check_cell(maze, pt):
     """
     Check if a cell is a wall or the goal (1 = wall, 2 = goal, 0 = path)
-    :param maze:
-    :param pt:
-    :return:
+    :param maze:occupany grid message
+    :param pt:index to check
+    :return:what is at that index
     """
     N = maze.info.width
     M = maze.info.height
@@ -66,15 +72,20 @@ def check_cell(maze, pt):
 
 def getStart(maze):
     """
-    Get the starting position
+    get the stating location
+    :param maze: occupany grid message
+    :return: 2D index of the starting location
     """
     start = maze.data.index(2)
     return get_i_j(maze,start)
 
 def getGoal(maze):
     """
-    Get the goal position
+    gets the goal location
+    :param maze: occupany grid message
+    :return: 2D index of the goal location
     """
+
     goal = maze.data.index(3)
     return get_i_j(maze,goal)
 
@@ -82,6 +93,13 @@ def construct_map(maze):
     pass
 
 def index_to_cell(maze,x,y):
+    """
+    converts 2D index to 1D index
+    :param maze: occupancy grid message
+    :param x: x index of 2D array
+    :param y: y index of 2D array
+    :return: index of 1D array
+    """
     return maze.info.width*y + x
 
 # def neighbors_euclidean(maze, loc_x, loc_y):
