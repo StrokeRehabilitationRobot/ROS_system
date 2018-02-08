@@ -111,19 +111,17 @@ class Maze:
         self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
 
         (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-        (position_joint, velocity, effort) = self.call_return_joint_states(joint_names)
 
-        EE_x = tools.helper.remap(position[0],0.3,0.4,0,self.windowHeight )
-        EE_y = tools.helper.remap(position_joint[0],-0.6,0.6,0,self.windowWidth )
 
+
+        (position, velocity, effort) = self.call_return_joint_states(joint_names)
+        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
+        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
 
-        print EE_x
+
         pygame.draw.rect(self.display_surf, GREEN,
                          (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
-
-
-
 
 
     def call_return_joint_states(self,joint_names):
