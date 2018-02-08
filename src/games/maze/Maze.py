@@ -48,7 +48,7 @@ class Maze:
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
-        #rospy.Subscriber("a_star", Path, self.path_draw)
+        rospy.Subscriber("a_star", Path, self.path_callback)
         rospy.Timer(rospy.Duration(0.1), self.update)
         self.running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
@@ -56,6 +56,7 @@ class Maze:
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
         self._odom_list = tf.TransformListener()
         self.player = Point()
+        self.solved_path = Path()
         pygame.init()
         print("Ready to host maze")
 
@@ -83,6 +84,7 @@ class Maze:
         if self.running:
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
+            self.path_draw()
             self.player_draw()
             pygame.display.update()
             self.pub_player.publish(self.player)
@@ -96,7 +98,7 @@ class Maze:
         self.on_init()
 
     def invert(self):
-        for index, row in enumerate(self.maze):
+        for index, rseow in enumerate(self.maze):
             self.maze[index] = row[::-1]
 
     def player_draw(self):
@@ -108,9 +110,9 @@ class Maze:
         joint_names = ["master_joint0",
                        "master_joint1",
                        "master_joint2"]
-        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
+        #self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
 
-        (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        #(position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
 
 
 
@@ -120,7 +122,7 @@ class Maze:
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
 
 
-        pygame.draw.rect(self.display_surf, GREEN,
+        pygame.draw.rect(self.display_surf, WHITE,
                          (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
@@ -154,19 +156,27 @@ class Maze:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
 
-    def path_draw(self,path):
+    def path_callback(self,msg):
+
+        self.solved_path = msg
+
+
+    def path_draw(self):
         """
 
         :param path:
         :return:
         """
-        for point in path:
+
+
+        for point in self.solved_path.poses:
 
             pixels_x = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
-            #print pixels_x
-            pixels_y = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
+            print pixels_x
+            pixels_y = (point.pose.position.y * 50) + math.floor(abs((50 - 20) * 0.5))
             pygame.draw.rect(self.display_surf, GREEN,
                              (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+        #pygame.display.update()
 
 
     def at_start(self):
