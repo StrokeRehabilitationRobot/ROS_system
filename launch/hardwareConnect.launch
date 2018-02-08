@@ -3,7 +3,7 @@
 
     <!-- <node pkg="strokeRehabSystem" type="hid2udp.sh" name="hid2udp" output="screen">
   	</node> -->
-    <node pkg="strokeRehabSystem" type="udp_node.py" name="UDP" output="screen">
+    <node pkg="strokeRehabSystem" type="udp_node.py" name="UDP">
     </node>
 
 </launch>
