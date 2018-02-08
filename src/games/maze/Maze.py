@@ -13,6 +13,7 @@ from std_msgs.msg import Bool
 import rospy
 import tf
 import tools.joint_states_listener
+import tools.helper
 
 # Colors for use throughout
 RED = (255,0,0)
@@ -47,9 +48,9 @@ class Maze:
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
-        rospy.Subscriber("a_star", Path, self.maze_callback)
+        #rospy.Subscriber("a_star", Path, self.path_draw)
         rospy.Timer(rospy.Duration(0.1), self.update)
-        self._running = False
+        self.running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
@@ -61,12 +62,11 @@ class Maze:
 
 
     def on_init(self):
+        self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
 
         print "here"
-        self._running = True
-        self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
+        self.running = True
         pygame.display.set_caption('Travel from Blue Square to Red Square')
-        self._running = True
         self.N = self.maze.info.height  # number of rows
         self.M = self.maze.info.width  # number of columns
         self.maze_draw()
@@ -80,12 +80,11 @@ class Maze:
 
         :return:
         """
-        if self._running:
+        if self.running:
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
             self.player_draw()
             pygame.display.update()
-
             self.pub_player.publish(self.player)
             start = self.at_start()
             goal  = self.at_goal()
@@ -112,19 +111,20 @@ class Maze:
         self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
 
         (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-        (position_j, velocity, effort) = self.call_return_joint_states(joint_names)
+        (position_joint, velocity, effort) = self.call_return_joint_states(joint_names)
 
-        EE_x = ((arm_translation_x - position[0]) / arm_scale_x) * self.maze.info.width
-        EE_y = ((position[1] - arm_translation_y) / arm_scale_y) * self.maze.info.height
+        EE_x = tools.helper.remap(position[0],0.3,0.4,0,self.windowHeight )
+        EE_y = tools.helper.remap(position_joint[0],-0.6,0.6,0,self.windowWidth )
+
         (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
 
+        print EE_x
         pygame.draw.rect(self.display_surf, GREEN,
-                         (round(self.player.x,2), round(self.player.y,2), PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+                         (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
 
-    def remap(self, x, in_min, in_max, out_min, out_max):
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
 
     def call_return_joint_states(self,joint_names):
         rospy.wait_for_service("return_joint_states")
