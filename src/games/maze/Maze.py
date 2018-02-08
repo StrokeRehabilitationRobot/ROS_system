@@ -47,8 +47,8 @@ class Maze:
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
-        rospy.Subscriber("a_star", Path, self.maze_callback)
-        rospy.Timer(rospy.Duration(0.1), self.update)
+        rospy.Subscriber("a_star", Path, self.path_draw)
+        rospy.Timer(rospy.Duration(0.5), self.update)
         self._running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
@@ -81,11 +81,11 @@ class Maze:
         :return:
         """
         if self._running:
-            self.display_surf.fill((0, 0, 0))
-            self.maze_draw()
+            #self.display_surf.fill((0, 0, 0))
+            #self.maze_draw()
             self.player_draw()
             pygame.display.update()
-
+            self.check_collision()
             self.pub_player.publish(self.player)
             start = self.at_start()
             goal  = self.at_goal()
@@ -162,13 +162,15 @@ class Maze:
         :param path:
         :return:
         """
-        for point in path:
+        for point in path.poses:
 
             pixels_x = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
             #print pixels_x
-            pixels_y = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
+            pixels_y = (point.pose.position.y * 50) + math.floor(abs((50 - 20) * 0.5))
             pygame.draw.rect(self.display_surf, GREEN,
                              (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+        pygame.display.update()
+
 
 
     def at_start(self):
