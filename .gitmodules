@@ -1,0 +1,3 @@
+[submodule "lib/dmp"]
+	path = lib/dmp
+	url = git@github.com:StrokeRehabilitationRobot/dmp_experiments.git
