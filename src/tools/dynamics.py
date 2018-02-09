@@ -256,7 +256,7 @@ def get_linear_vel(robot):
     J = J3[0:3,0:3]
     return  J*qd
 
-def manipulator_torque(joints,force):
+def get_J_tranpose(joints):
     """
 
     :param robot:

@@ -93,6 +93,8 @@ def make_tau_packet(tau,vib=0,board=0):
     msg.packet = packet
     msg.id = id
     msg.board = board
+    return msg
+
 
 def call_return_joint_states():
     """

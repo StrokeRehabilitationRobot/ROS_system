@@ -2,10 +2,11 @@
 from strokeRehabSystem.srv import *
 from strokeRehabSystem.msg import *
 from sensor_msgs.msg import JointState
-from geometery_msgs.msg import WrenchStamped
+from geometry_msgs.msg import WrenchStamped
 from std_msgs.msg import Header
 import UDP
 import tools.helper
+import tools.dynamics
 import rospy
 import math
 import numpy as np
@@ -52,8 +53,10 @@ def torque_callback(force):
     else:
         board = 1
 
+    F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
+
     J = tools.dynamics.get_J_tranpose(position)
-    tau = np.array(J).dot(np.array(force).reshape(3, 1))
+    tau = np.array(J).dot(np.array(F).reshape(3, 1))
     packet = tools.helper.make_tau_packet(tau,1,board)
     udp_callback(packet)
 
