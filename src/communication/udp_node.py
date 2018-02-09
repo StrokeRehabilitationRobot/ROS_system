@@ -14,34 +14,7 @@ udp = UDP.UDP(9876)
 robot_state = rospy.Publisher('joint_states', JointState, queue_size=1)
 
 
-def torque_callback(force):
 
-    (position, velocity, effort) = tools.helper.call_return_joint_states()
-
-    if force.header.frame_id == "slave":
-        board = 0
-    else:
-        board = 1
-
-    J = tools.dynamics.get_J_tranpose(position)
-    tau = np.array(J).dot(np.array(force).reshape(3, 1))
-    packet = tools.helper.make_tau_packet(tau,1,board)
-    callback_udp(packet)
-
-
-def make_torque_callback(force):
-
-    (position, velocity, effort) = tools.helper.call_return_joint_states()
-
-    if force.header.frame_id == "slave":
-        board = 0
-    else:
-        board = 1
-
-    J = tools.dynamics.get_J_tranpose(position)
-    tau = np.array(J).dot(np.array(force).reshape(3, 1))
-    packet = tools.helper.make_tau_packet(tau,1,board)
-    callback_udp(packet)
 
 
 def udp_callback(downstream):
@@ -68,13 +41,70 @@ def udp_callback(downstream):
     state.effort = tau
     robot_state.publish(state)
 
+
+
+def torque_callback(force):
+
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+
+    if force.header.frame_id == "slave":
+        board = 0
+    else:
+        board = 1
+
+    J = tools.dynamics.get_J_tranpose(position)
+    tau = np.array(J).dot(np.array(force).reshape(3, 1))
+    packet = tools.helper.make_tau_packet(tau,1,board)
+    udp_callback(packet)
+
+
+def motor_callback(force):
+
+    motor = []
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+
+    if force.header.frame_id == "slave":
+        board = 0
+    else:
+        board = 1
+
+    J = tools.dynamics.get_J_tranpose(position)
+    tau = round(np.array(J).dot(np.array(force).reshape(3, 1)),2)
+
+    for qf in tau:
+        motor.append( int(( 0.05 < qf ) or ( -0.05 > qf )) )
+
+    packet = tools.helper.make_motor_packet(motor,tau,1,board)
+
+    udp_callback(packet)
+
+
+def pid_callback(joint):
+
+    if joint.header.frame_id == "slave":
+        board = 0
+    else:
+        board = 1
+
+    packet = tools.helper.make_pid_packet(joint, 0, board)
+    udp_callback(packet)
+
+
+def status_callback(msg):
+
+    packet = tools.helper.make_status_packet()
+    udp_callback(packet)
+
+
 def udp_server():
     rospy.init_node('udp_server')
     rospy.Subscriber("udp", udpMessage, udp_callback)
-    rospy.Subscriber("ee_torque", WrenchStamped, torque_callback)
-    rospy.Subscriber("ee_torque", WrenchStamped, torque_callback)
+    rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
+    rospy.Subscriber("motors_server", WrenchStamped, motor_callback)
+    rospy.Subscriber("pid_server", JointState, pid_callback)
+    rospy.Timer(rospy.Duration(0.01), status_callback)
     #udp = UDP.UDP(9876)
     rospy.spin()
 
 if __name__ == "__main__":
-	udp_server()
+    udp_server()
