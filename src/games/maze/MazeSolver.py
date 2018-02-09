@@ -14,7 +14,7 @@ from pygame.locals import *
 def a_star(maze):
     print("Called to solve")
     # find shortest path with fastest search
-    path_pub = rospy.Publisher("a_star", Path, queue_size=1)
+    path_pub = rospy.Publisher("a_star", Path, queue_size=1,latch=True)
     start = maze_helper.getStart(maze) #column, row
     goal = maze_helper.getGoal(maze) #column, row
     frontier = Queue.PriorityQueue()
@@ -52,6 +52,7 @@ def a_star(maze):
     my_path.poses.reverse()
     #my_path.header.stamp = rospy.Time.now()
     print("Publishing")
+    path_pub.publish(my_path)
     path_pub.publish(my_path)
     print("Published")
 
