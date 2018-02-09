@@ -5,8 +5,8 @@
   <arg name="rvizconfig" default="$(find urdf_tutorial)/rviz/urdf.rviz" />
 
 
-  <node pkg="strokeRehabSystem" type="udp_test.py" name="status">
-  </node>
+  <!-- <node pkg="strokeRehabSystem" type="udp_test.py" name="status">
+  </node> -->
 
   <param name="robot_description" command="$(find xacro)/xacro.py $(find strokeRehabSystem)/urdf/strokearm.urdf.xacro" />
   <param name="use_gui" value="$(arg gui)"/>
