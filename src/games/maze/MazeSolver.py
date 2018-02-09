@@ -70,9 +70,9 @@ def a_star(maze):
         except IndexError:
             next = step
 
-        print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
-             % (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
-                next.pose.position.x, next.pose.position.y)
+        #print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
+             #% (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
+                #next.pose.position.x, next.pose.position.y)
 
         if (prev is None) or (next is None):
             print("end-bit")
@@ -92,7 +92,6 @@ def a_star(maze):
             segments.append([])
             segment_i += 1
 
-    print len(segments)
 
 def costmove(current, next, prev):
     if (prev is None) or (next is None):
