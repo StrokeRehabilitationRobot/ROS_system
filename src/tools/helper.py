@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 from math import pi
 import numpy as np
+import rospy
+import sys
+from strokeRehabSystem.srv import ReturnJointStates
+from strokeRehabSystem.msg import *
 
 
 def encoder_to_angle(ticks):
@@ -21,7 +25,7 @@ def angle_to_encoder(angle):
     convert_factor = ((1 / 11.44) * (2 * pi / 360))  # converts from tick->rads
     return angle / convert_factor
 
-def make_packet(q,qd,tau):
+def make_pid_packet(joint,vib=0,board=0):
     """
 
     :param q: joint values
@@ -29,15 +33,90 @@ def make_packet(q,qd,tau):
     :param tau: torque vals
     :return:
     """
+    id = 37
+    msg = udpMessage()
     packet = 15*[0.0]
 
-    for i in xrange(3):
-        packet[3*i] = angle_to_encoder(q[i])
-        packet[3*i+1] = qd[i]
-        packet[3*i+2] = tau[i]
-    packet[6]+= angle_to_encoder(0.5*pi)
-    return packet
 
+    for i in xrange(3):
+        packet[3*i]   = angle_to_encoder(joint.position[i])
+        packet[3*i+1] = joint.velocity[i]
+        packet[3*i+2] = joint.effort[i]
+
+    packet[6] += angle_to_encoder(0.5*pi)
+    packet[9] = vib
+    msg.packet = packet
+    msg.id = id
+    msg.board = board
+    return msg
+
+def make_status_packet(board=0):
+    """
+
+    :return:
+    """
+    packet = 15 * [0.0]
+    msg = udpMessage()
+    id = 38
+    msg.id     = id
+    msg.packet = packet
+    msg.board  = board
+    return msg
+
+def make_motor_packet(motors,tau=[0,0,0],vib=0,board=0):
+    """
+
+    :return:
+    """
+    id = 10
+    msg = udpMessage()
+    packet = 15*[0.0]
+    packet[0:3] = motors
+    packet[4:6] = tau
+    packet[9] = vib
+    msg.packet = packet
+    msg.id = id
+    msg.board = board
+    return msg
+
+
+def make_tau_packet(tau,vib=0,board=0):
+    """
+
+    :return:
+    """
+    id = 39
+    msg = udpMessage()
+    packet = 15*[0.0]
+    packet[:3] = tau
+    packet[9] = vib
+    msg.packet = packet
+    msg.id = id
+    msg.board = board
+    return msg
+
+
+def call_return_joint_states():
+    """
+    joint server callback, collects the joint angles
+    :param joint_names: name of joints
+    :return:
+    """
+
+    joint_names = ["master_joint0",
+                   "master_joint1",
+                   "master_joint2"]
+    rospy.wait_for_service("return_joint_states")
+    try:
+        s = rospy.ServiceProxy("return_joint_states", ReturnJointStates)
+        resp = s(joint_names)
+    except rospy.ServiceException, e:
+        print "error when calling return_joint_states: %s"%e
+        sys.exit(1)
+    for (ind, joint_name) in enumerate(joint_names):
+        if(not resp.found[ind]):
+            print "joint %s not found!"%joint_name
+    return (resp.position, resp.velocity, resp.effort)
 
 def norm_tau(u):
     """
