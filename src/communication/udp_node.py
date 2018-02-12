@@ -75,9 +75,7 @@ def motor_callback(force):
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
     tau = np.array(J).dot(np.array(F).reshape(3, 1))
-    for qf in tau:
-        #motor.append( int(( 0.05 < qf ) or ( -0.05 > qf )) )
-        motor.append( 0 )
+    motor = abs(np.divide(tau, tau))
 
     packet = tools.helper.make_motor_packet(motor,tau,1,board)
 
