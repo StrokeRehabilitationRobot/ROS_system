@@ -1,0 +1,4 @@
+
+[submodule "src/games/whack_a_mole"]
+	path = src/games/whack_a_mole
+	url = git@github.com:sonlexqt/whack-a-mole.git

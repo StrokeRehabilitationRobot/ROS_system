@@ -132,17 +132,19 @@ def make_coriolis_matrix(robot):
     return np.asmatrix(C)
 
 
-def get_jacobian_matricies(robot):
+def get_jacobian_matricies(joints):
     """
 
     :param robot:
     :return:
     """
 
-    I, m, l, r = robot.unpack
-    theta_1 = robot.q[0]
-    theta_2 = robot.q[1]
-    theta_3 = robot.q[2]
+    l = helper.get_lengths()
+    r = helper.get_centriod()
+
+    theta_1 = joints[0]
+    theta_2 = joints[1]
+    theta_3 = joints[2]
 
 
     J_1 =  np.zeros(shape=(6,3))
@@ -173,8 +175,7 @@ def fk(joints):
     :return:
     """
     l = helper.get_lengths()
-    print 'l',l
-    print 'theta',joints
+
     theta_1 = joints[0]
     theta_2 = joints[1]
     theta_3 = joints[2]
@@ -255,14 +256,14 @@ def get_linear_vel(robot):
     J = J3[0:3,0:3]
     return  J*qd
 
-def get_J_tranpose(robot):
+def get_J_tranpose(joints):
     """
 
     :param robot:
     :return:
     """
 
-    J1, J2, J3 = get_jacobian_matricies(robot)
+    J1, J2, J3 = get_jacobian_matricies(joints)
     J = J3[0:3, 0:3]
 
     return np.transpose(J)

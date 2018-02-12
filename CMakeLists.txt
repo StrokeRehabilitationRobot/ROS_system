@@ -11,8 +11,10 @@ catkin_python_setup()
 
 # Generate services in the 'srv' folder
 
-add_service_files(DIRECTORY srv FILES UDPMessage.srv)
-add_message_files(DIRECTORY msg FILES udpMessage.msg)
+add_service_files(DIRECTORY srv FILES UDPMessage.srv ReturnJointStates.srv)
+# add_service_files(DIRECTORY srv FILES ReturnJointStates.srv)
+
+add_message_files(DIRECTORY msg FILES udpMessage.msg )
 
 
 generate_messages(DEPENDENCIES std_msgs)
@@ -20,6 +22,7 @@ generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(
   INCLUDE_DIRS src/tools
+  INCLUDE_DIRS src/games
 
 
 )

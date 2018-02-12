@@ -28,7 +28,7 @@ class UDP(object):
         :return: the message from the board
         """
         packet = list(packet)
-        print self._port
+        
         id_packet = [id]
         board_packet = [board]
         buf = struct.pack('%sf' % len(packet), *packet)

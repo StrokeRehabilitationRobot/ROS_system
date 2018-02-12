@@ -4,13 +4,17 @@
   <arg name="gui" default="true" />
   <arg name="rvizconfig" default="$(find urdf_tutorial)/rviz/urdf.rviz" />
 
-  <param name="robot_description" textfile="$(find strokeRehabSystem)/urdf/duel_arms.urdf.xacro"/>
 
+  <!-- <node pkg="strokeRehabSystem" type="udp_test.py" name="status">
+  </node> -->
+
+  <param name="robot_description" command="$(find xacro)/xacro.py $(find strokeRehabSystem)/urdf/strokearm.urdf.xacro" />
   <param name="use_gui" value="$(arg gui)"/>
 
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-
+  <node pkg="strokeRehabSystem" type="joint_states_listener.py" name="joint_state_listener" output="screen">
+  </node>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
 
 </launch>
