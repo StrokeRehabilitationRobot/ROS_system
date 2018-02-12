@@ -9,7 +9,7 @@ import numpy
 import sys
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
-from geometry_msgs.msg import Pose,Point
+from geometry_msgs.msg import Pose,Point, WrenchStamped
 from std_msgs.msg import Bool
 import rospy
 import tf
@@ -46,7 +46,7 @@ class Maze:
 
         :param maze_name:
         """
-
+        self.walls = []
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
@@ -55,7 +55,9 @@ class Maze:
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
+        self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
         self._odom_list = tf.TransformListener()
+        self.player_rec = None
         self.player = Point()
         self.solved_path = Path()
         pygame.init()
@@ -74,9 +76,12 @@ class Maze:
         self.N = self.maze.info.height  # number of rows
         self.M = self.maze.info.width  # number of columns
         self.maze_draw()
+        self.player_draw()
+
         #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
         #start_loc_pixels_y = (start[1] * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
         pygame.display.update()
+
 
 
     def update(self,msg):
@@ -85,6 +90,7 @@ class Maze:
         :msg: not used
         :return:
         """
+
         if self.running:
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
@@ -94,8 +100,6 @@ class Maze:
             self.pub_player.publish(self.player)
             start = self.at_start()
             goal  = self.at_goal()
-
-
 
     def maze_callback(self,msg):
         """
@@ -107,7 +111,7 @@ class Maze:
         self.on_init()
 
     def invert(self):
-        for index, rseow in enumerate(self.maze):
+        for index, row in enumerate(self.maze):
             self.maze[index] = row[::-1]
 
     def player_draw(self):
@@ -116,40 +120,20 @@ class Maze:
         :return:
         """
 
-        # joint names
-
-
-
         # calls the joint state server
         #(position, velocity, effort) = self.call_return_joint_states(joint_names)
         (position, velocity, effort) = tools.helper.call_return_joint_states()
         # scales the input to the game
         EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
         EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
-        (self.player.x, self.player.y) = numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
-
-
+        (self.player.x, self.player.y) =  (EE_y,EE_x) #numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
+        forces = WrenchStamped()
+        forces.header.frame_id = "master"
+        #forces.wrench.force = self.check_collision(self.player)
+        self.check_collision(self.player)
+        #self.pub_forces.publish(forces)
         pygame.draw.rect(self.display_surf, WHITE,
                          (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
-
-
-    def call_return_joint_states(self,joint_names):
-        """
-        joint server callback, collects the joint angles
-        :param joint_names: name of joints
-        :return:
-        """
-        rospy.wait_for_service("return_joint_states")
-        try:
-            s = rospy.ServiceProxy("return_joint_states", ReturnJointStates)
-            resp = s(joint_names)
-        except rospy.ServiceException, e:
-            print "error when calling return_joint_states: %s"%e
-            sys.exit(1)
-        for (ind, joint_name) in enumerate(joint_names):
-            if(not resp.found[ind]):
-                print "joint %s not found!"%joint_name
-        return (resp.position, resp.velocity, resp.effort)
 
 
     def maze_draw(self):
@@ -161,17 +145,25 @@ class Maze:
 
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
-
+            self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
             cell = maze_helper.check_cell(self.maze,index)
             if cell == 1:
                 pygame.draw.rect(self.display_surf, PURPLE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
             elif cell == 2:
                 pygame.draw.rect(self.display_surf, BLUE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
+
+
 
     def path_callback(self,msg):
         """
@@ -189,15 +181,12 @@ class Maze:
         draws the path
         :return:
         """
-
-
         for point in self.solved_path.poses:
 
             pixels_x = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
             pixels_y = (point.pose.position.y * 50) + math.floor(abs((50 - 20) * 0.5))
             pygame.draw.rect(self.display_surf, GREEN,
                              (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
-        #pygame.display.update()
 
 
     def at_start(self):
@@ -228,6 +217,66 @@ class Maze:
 
         self.pub_goal.publish(state)
         return state.data
+
+    def check_collision(self, point):
+        """
+        checks if player (top left corner represented by point passed in)
+        :return: 3D vector for joint torques
+        """
+
+        # Get four corners of the player (based on top left corner passed in)
+        player_topleft = Point()
+        player_topleft.x = point.x/BLOCKSIZE_X
+        player_topleft.y = point.y/BLOCKSIZE_Y
+        print "x", int(point.x/BLOCKSIZE_X)
+        print "y",int(point.y/BLOCKSIZE_Y)
+
+        player_topright = Point()
+        player_topright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
+        player_topright.y = player_topleft.y/BLOCKSIZE_X
+
+        player_bottomright = Point()
+        player_bottomright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
+        player_bottomright.y = player_topleft.y + PLAYERSIZE_Y/BLOCKSIZE_X
+
+        player_bottomleft = Point()
+        player_bottomleft.x = player_topleft.x/BLOCKSIZE_X
+        player_bottomleft.y = (player_topleft.y + PLAYERSIZE_Y)/BLOCKSIZE_X
+
+        player_corners = [player_topleft, player_topright, player_bottomright, player_bottomleft]
+
+        # Check for each corner in a block labeled as a wall
+        collisions = 4 * [False]
+        for index, corner in enumerate(player_corners):
+            cell_x = corner.x #/ BLOCKSIZE_X
+            cell_y = corner.y #/ BLOCKSIZE_Y
+            point_index = maze_helper.index_to_cell(self.maze, cell_x, cell_y)
+            print int(point_index)
+            if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+                collisions[index] = True
+
+        print collisions
+
+        # Return force vector in three dimensions
+        if collisions[0] and collisions[1]:
+            #return [1, 0, 0]
+            print("Go Down")
+        elif collisions[1] and collisions[2]:
+            #return [0, -1, 0]
+            print("Go Left")
+        elif collisions[2] and collisions[3]:
+            #return [-1, 0, 0]
+            print("Go Up")
+        elif collisions[3] and collisions[0]:
+            #return [0, 1, 0]
+            print("Go Right")
+        elif collisions[0] or collisions[1]:
+            #return [1, 0, 0]
+            print("Go Down")
+        elif collisions[2] or collisions[3]:
+            #return [-1, 0, 0]
+            print("Go Up")
+
 
 
 if __name__ == "__main__":
