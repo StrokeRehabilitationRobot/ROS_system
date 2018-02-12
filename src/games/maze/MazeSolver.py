@@ -5,7 +5,11 @@ import Maze
 import pygame
 import math
 import maze_helper
+<<<<<<< HEAD
+from nav_msgs.msg import Path, OccupancyGrid
+=======
 from nav_msgs.msg import OccupancyGrid, Path
+>>>>>>> 80331909878824344d6f8a66bc0e81fc3fb371ed
 from geometry_msgs.msg import PoseStamped
 import rospy
 from pygame.locals import *
@@ -35,6 +39,19 @@ def a_star(maze):
                 came_from[next] = current
 
     current = goal
+<<<<<<< HEAD
+    path = Path()
+    path.header.stamp = rospy.Time.now()
+    step = PoseStamped()
+    step.header.stamp = rospy.Time.now()
+    print came_from
+    while current != start:
+
+        step.pose.position.x = current[0]
+        step.pose.position.y = current[1]
+        step.pose.position.z = 0
+        path.poses.append(step)
+=======
     my_path = Path()
     step_index = 0
     while current != start:
@@ -43,6 +60,7 @@ def a_star(maze):
         my_path.poses[step_index].pose.position.y = current[1]
         my_path.poses[step_index].pose.position.z = 0
         #this_step.header.stamp = rospy.Time.now()
+>>>>>>> 80331909878824344d6f8a66bc0e81fc3fb371ed
         current = came_from[current]
         step_index += 1
     my_path.poses.append(PoseStamped())
@@ -71,9 +89,9 @@ def a_star(maze):
         except IndexError:
             next = step
 
-        print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
-             % (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
-                next.pose.position.x, next.pose.position.y)
+        #print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
+             #% (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
+                #next.pose.position.x, next.pose.position.y)
 
         if (prev is None) or (next is None):
             print("end-bit")
@@ -93,7 +111,6 @@ def a_star(maze):
             segments.append([])
             segment_i += 1
 
-    print len(segments)
 
 def costmove(current, next, prev):
     if (prev is None) or (next is None):

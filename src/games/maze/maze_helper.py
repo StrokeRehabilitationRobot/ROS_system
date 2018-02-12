@@ -44,7 +44,7 @@ def get_i_j(maze,index):
     j = index/N
     i = index % N
     return i,j
-     
+
 
 def check_cell(maze, pt):
     """
@@ -55,9 +55,9 @@ def check_cell(maze, pt):
     """
     N = maze.info.width
     M = maze.info.height
-
+    
     if pt not in range(len(maze.data)):
-        return 1
+        return 0
     # If the cell in the maze array is a 1, the cell is a wall
     elif maze.data[pt] == 1:
         return 1
@@ -119,5 +119,3 @@ def neighbors_manhattan(maze,loc_x, loc_y):
             neighbors_out.append(option)
 
     return neighbors_out
-
-
