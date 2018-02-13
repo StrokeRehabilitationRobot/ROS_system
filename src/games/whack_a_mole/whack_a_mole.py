@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+
 import pygame
 import random
 from pygame import *
 import rospy
 import tf
+import tools.joint_states_listener
+import tools.helper
+
 
 
 class GameManager:
@@ -10,6 +15,7 @@ class GameManager:
         # Define constants
 
         rospy.init_node("whack_a_mole")
+        self._odom_list = tf.TransformListener()
         self.game_setup()
 
 
@@ -35,6 +41,7 @@ class GameManager:
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption(self.GAME_TITLE)
         self.background = pygame.image.load("images/bg.png")
+        self.hammer = pygame.image.load("images/hammer.jpeg")
         # Font object for displaying text
         self.font_obj = pygame.font.Font('./fonts/GROBOLD.ttf', self.FONT_SIZE)
         # Initialize the mole's sprite sheet
@@ -91,7 +98,14 @@ class GameManager:
             return False
 
 
-    def player_update(self, pose):
+    def player_update(self):
+
+        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
+        (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+
+        EE_y = tools.helper.remap(position[0], -0.45, 0.45, 0, self.self.SCREEN_WIDTH )
+        EE_x = tools.helper.remap(position[1], -0.45, 0.45, 0, self.self.SCREEN_HEIGHT)
+        self.screen.blit(self.hammer, (EE_x, EE_y))
 
 
     # Update the game states, re-calculate the player's score, misses, level
@@ -137,6 +151,7 @@ class GameManager:
             self.mole[i] = self.mole[i].convert_alpha()
 
         while loop:
+            self.player_update()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     loop = False
@@ -244,11 +259,14 @@ class SoundEffect:
 
 ###############################################################
 # Initialize the game
-pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
-pygame.init()
 
-# Run the main loop
-my_game = GameManager()
-my_game.start()
-# Exit the game if the main loop ends
-pygame.quit()
+if __name__ == "__main__":
+
+    pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
+    pygame.init()
+
+    # Run the main loop
+    my_game = GameManager()
+    my_game.start()
+    # Exit the game if the main loop ends
+    pygame.quit()
