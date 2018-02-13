@@ -16,10 +16,10 @@ class LatestJointStates:
     def __init__(self):
         rospy.init_node('joint_states_listener')
         self.lock = threading.Lock()
-        self.name = []
-        self.position = []
-        self.velocity = []
-        self.effort = []
+        self.name = 3*[0]
+        self.position = 3*[0]
+        self.velocity = 3*[0]
+        self.effort = 3*[0]
         self.thread = threading.Thread(target=self.joint_states_listener)
         self.thread.start()
 
@@ -35,6 +35,7 @@ class LatestJointStates:
     #callback function: when a joint_states message arrives, save the values
     def joint_states_callback(self, msg):
         self.lock.acquire()
+        rospy.loginfo("messages received!\n")
         self.name = msg.name
         self.position = msg.position
         self.velocity = msg.velocity
@@ -53,7 +54,9 @@ class LatestJointStates:
 
         #return info for this joint
         self.lock.acquire()
-        if joint_name in self.name:
+
+        if joint_name in self.name and not len(self.velocity) ==0 :
+
             index = self.name.index(joint_name)
             position = self.position[index]
             velocity = self.velocity[index]
@@ -61,10 +64,18 @@ class LatestJointStates:
 
         #unless it's not found
         else:
-            rospy.logerr("Joint %s not found!", (joint_name,))
+
+            #rospy.logerr("Joint %s not found!", (joint_name,))
+            index = self.name.index
+            position = self.position
+            velocity = self.velocity
+            effort = self.effort
+
             self.lock.release()
+
             return (0, 0., 0., 0.)
         self.lock.release()
+
         return (1, position, velocity, effort)
 
 

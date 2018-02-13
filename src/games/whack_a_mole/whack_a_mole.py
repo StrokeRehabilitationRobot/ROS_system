@@ -13,6 +13,7 @@ import pygame
 import random
 from pygame import *
 import rospy
+import time
 
 
 class GameManager:
@@ -40,9 +41,10 @@ class GameManager:
         self.GAME_TITLE = "Whack A Mole"
         # Initialize player's score, number of missed hits and level
         self.score = 0
+
         self.misses = 0
         self.level = 1
-        # Initialize screen
+        # Initialize screenFile "/opt/ros/kinetic/lib/python2.7/dist-packages/rospy/impl/tcpros_service.py
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption(self.GAME_TITLE)
         self.background = pygame.image.load("images/bg.png")
@@ -70,6 +72,7 @@ class GameManager:
         self.hole_positions.append((464, 119))
         self.hole_positions.append((95, 43))
         self.hole_positions.append((603, 11))
+        self.EE = (self.SCREEN_WIDTH*0.5,self.SCREEN_HEIGHT*0.5)
         # Init debugger
         self.debugger = Debugger("debug")
         # Sound effects
@@ -89,6 +92,7 @@ class GameManager:
         if new_interval > 0:
             return new_interval
         else:
+
             return 0.05
 
     # Check whether the mouse click hit the mole or not
@@ -105,12 +109,17 @@ class GameManager:
 
     def player_update(self):
 
-        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
-        (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        #self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
+        #(position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
 
-        EE_y = tools.helper.remap(position[1], -0.35, 0.35, 0, self.SCREEN_WIDTH )
-        EE_x = tools.helper.remap(position[0],0.25, 0.45, 0, self.SCREEN_HEIGHT)
-        self.screen.blit(self.hammer, (EE_y, EE_x))
+
+        (position, velocity, effort) = tools.helper.call_return_joint_states()
+
+
+        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.SCREEN_WIDTH )
+        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.SCREEN_HEIGHT )
+        self.EE = (EE_y,EE_x)
+        self.screen.blit(self.hammer, self.EE)
 
 
     # Update the game states, re-calculate the player's score, misses, level
@@ -176,18 +185,20 @@ class GameManager:
                         self.update()
                     else:
                         self.misses += 1
+                        self.player_update()
                         self.update()
 
             if num > 5:
                 self.screen.blit(self.background, (0, 0))
-                self.player_update()
+                #self.player_update()
                 self.update()
                 num = -1
                 left = 0
 
             if num == -1:
                 self.screen.blit(self.background, (0, 0))
-                self.player_update()
+                #self.player_update()
+
                 self.update()
                 num = 0
                 is_down = False
@@ -202,7 +213,7 @@ class GameManager:
                 self.screen.blit(self.background, (0, 0))
                 self.screen.blit(pic, (self.hole_positions[frame_num][0] - left, self.hole_positions[frame_num][1]))
 
-                self.player_update()
+                #self.player_update()
 
                 self.update()
                 if is_down is False:
@@ -214,13 +225,16 @@ class GameManager:
                 elif num == 3:
                     num -= 1
                     is_down = True
+
                     #self.soundEffect.playPop()
                     interval = self.get_interval_by_level(initial_interval)  # get the newly decreased interval value
                 else:
                     interval = 0.1
                 cycle_time = 0
             # Update the display
+            time.sleep(0.1)
             self.player_update()
+
             pygame.display.flip()
 
 
