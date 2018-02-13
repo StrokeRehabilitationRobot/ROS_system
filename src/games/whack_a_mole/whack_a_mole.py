@@ -1,13 +1,18 @@
-#!/usr/bin/env python
-
-import pygame
-import random
-from pygame import *
+# /usr/bin/env python
+import numpy
+import sys
+from nav_msgs.msg import OccupancyGrid,Path
+from strokeRehabSystem.srv import ReturnJointStates
+from geometry_msgs.msg import Pose,Point, WrenchStamped
+from std_msgs.msg import Bool
 import rospy
 import tf
 import tools.joint_states_listener
 import tools.helper
-
+import pygame
+import random
+from pygame import *
+import rospy
 
 
 class GameManager:
@@ -41,7 +46,7 @@ class GameManager:
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption(self.GAME_TITLE)
         self.background = pygame.image.load("images/bg.png")
-        self.hammer = pygame.image.load("images/hammer.jpeg")
+        self.hammer = pygame.image.load("images/hammer.jpg")
         # Font object for displaying text
         self.font_obj = pygame.font.Font('./fonts/GROBOLD.ttf', self.FONT_SIZE)
         # Initialize the mole's sprite sheet
@@ -103,8 +108,8 @@ class GameManager:
         self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
         (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
 
-        EE_y = tools.helper.remap(position[0], -0.45, 0.45, 0, self.self.SCREEN_WIDTH )
-        EE_x = tools.helper.remap(position[1], -0.45, 0.45, 0, self.self.SCREEN_HEIGHT)
+        EE_y = tools.helper.remap(position[0], -0.45, 0.45, 0, self.SCREEN_WIDTH )
+        EE_x = tools.helper.remap(position[1], -0.45, 0.45, 0, self.SCREEN_HEIGHT)
         self.screen.blit(self.hammer, (EE_x, EE_y))
 
 
