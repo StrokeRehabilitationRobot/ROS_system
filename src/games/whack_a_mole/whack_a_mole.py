@@ -156,10 +156,8 @@ class GameManager:
             self.mole[i] = self.mole[i].convert_alpha()
 
         while loop:
-            self.player_update()
-            self.update()
+
             for event in pygame.event.get():
-                self.player_update()
                 if event.type == pygame.QUIT:
                     loop = False
                 if event.type == MOUSEBUTTONDOWN and event.button == self.LEFT_MOUSE_BUTTON:
@@ -182,12 +180,14 @@ class GameManager:
 
             if num > 5:
                 self.screen.blit(self.background, (0, 0))
+                self.player_update()
                 self.update()
                 num = -1
                 left = 0
 
             if num == -1:
                 self.screen.blit(self.background, (0, 0))
+                self.player_update()
                 self.update()
                 num = 0
                 is_down = False
@@ -201,6 +201,9 @@ class GameManager:
                 pic = self.mole[num]
                 self.screen.blit(self.background, (0, 0))
                 self.screen.blit(pic, (self.hole_positions[frame_num][0] - left, self.hole_positions[frame_num][1]))
+
+                self.player_update()
+
                 self.update()
                 if is_down is False:
                     num += 1
@@ -217,6 +220,7 @@ class GameManager:
                     interval = 0.1
                 cycle_time = 0
             # Update the display
+            self.player_update()
             pygame.display.flip()
 
 
