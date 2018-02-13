@@ -30,7 +30,7 @@ class GameManager:
         """
         self.SCREEN_WIDTH = 800
         self.SCREEN_HEIGHT = 600
-        self.FPS = 60
+        self.FPS = 30
         self.MOLE_WIDTH = 90
         self.MOLE_HEIGHT = 81
         self.FONT_SIZE = 31
@@ -105,12 +105,12 @@ class GameManager:
 
     def player_update(self):
 
-        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(1.0))
+        self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
 
-        EE_y = tools.helper.remap(position[0], -0.45, 0.45, 0, self.SCREEN_WIDTH )
-        EE_x = tools.helper.remap(position[1], -0.45, 0.45, 0, self.SCREEN_HEIGHT)
-        self.screen.blit(self.hammer, (EE_x, EE_y))
+        EE_y = tools.helper.remap(position[1], -0.35, 0.35, 0, self.SCREEN_WIDTH )
+        EE_x = tools.helper.remap(position[0],0.25, 0.45, 0, self.SCREEN_HEIGHT)
+        self.screen.blit(self.hammer, (EE_y, EE_x))
 
 
     # Update the game states, re-calculate the player's score, misses, level
