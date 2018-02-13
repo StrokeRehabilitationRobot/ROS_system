@@ -30,7 +30,7 @@ class GameManager:
         """
         self.SCREEN_WIDTH = 800
         self.SCREEN_HEIGHT = 600
-        self.FPS = 30
+        self.FPS = 15
         self.MOLE_WIDTH = 90
         self.MOLE_HEIGHT = 81
         self.FONT_SIZE = 31
@@ -46,7 +46,7 @@ class GameManager:
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption(self.GAME_TITLE)
         self.background = pygame.image.load("images/bg.png")
-        self.hammer = pygame.image.load("images/hammer.jpg")
+        self.hammer = pygame.image.load("images/hammer.png")
         # Font object for displaying text
         self.font_obj = pygame.font.Font('./fonts/GROBOLD.ttf', self.FONT_SIZE)
         # Initialize the mole's sprite sheet
@@ -77,9 +77,9 @@ class GameManager:
     # Calculate the player level according to his current score & the LEVEL_SCORE_GAP constant
     def get_player_level(self):
         newLevel = 1 + int(self.score / self.LEVEL_SCORE_GAP)
-        if newLevel != self.level:
+        if newLevel != self.level:pass
             # if player get a new level play this sound
-            self.soundEffect.playLevelUp()
+            #self.soundEffect.playLevelUp()
         return 1 + int(self.score / self.LEVEL_SCORE_GAP)
 
     # Get the new duration between the time the mole pop up and down the holes
@@ -157,11 +157,13 @@ class GameManager:
 
         while loop:
             self.player_update()
+            self.update()
             for event in pygame.event.get():
+                self.player_update()
                 if event.type == pygame.QUIT:
                     loop = False
                 if event.type == MOUSEBUTTONDOWN and event.button == self.LEFT_MOUSE_BUTTON:
-                    self.soundEffect.playFire()
+                    #self.soundEffect.playFire()
                     if self.is_mole_hit(mouse.get_pos(), self.hole_positions[frame_num]) and num > 0 and left == 0:
                         num = 3
                         left = 14
@@ -170,9 +172,9 @@ class GameManager:
                         self.score += 1  # Increase player's score
                         self.level = self.get_player_level()  # Calculate player's level
                         # Stop popping sound effect
-                        self.soundEffect.stopPop()
+                        #self.soundEffect.stopPop()
                         # Play hurt sound
-                        self.soundEffect.playHurt()
+                        #self.soundEffect.playHurt()
                         self.update()
                     else:
                         self.misses += 1
@@ -209,7 +211,7 @@ class GameManager:
                 elif num == 3:
                     num -= 1
                     is_down = True
-                    self.soundEffect.playPop()
+                    #self.soundEffect.playPop()
                     interval = self.get_interval_by_level(initial_interval)  # get the newly decreased interval value
                 else:
                     interval = 0.1
@@ -236,7 +238,7 @@ class SoundEffect:
         self.popSound = pygame.mixer.Sound("sounds/pop.wav")
         self.hurtSound = pygame.mixer.Sound("sounds/hurt.wav")
         self.levelSound = pygame.mixer.Sound("sounds/point.wav")
-        pygame.mixer.music.play(-1)
+        #pygame.mixer.music.play(-1)
 
     def playFire(self):
         self.fireSound.play()
@@ -267,7 +269,7 @@ class SoundEffect:
 
 if __name__ == "__main__":
 
-    pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
+    #pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
     pygame.init()
 
     # Run the main loop
