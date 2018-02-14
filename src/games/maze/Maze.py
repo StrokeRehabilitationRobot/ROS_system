@@ -27,10 +27,10 @@ PINK = (255,200,200)
 PURPLE = (255,150,255)
 
 # Map element sizes
-BLOCKSIZE_X = 50
-BLOCKSIZE_Y = 50
-PLAYERSIZE_X = 20
-PLAYERSIZE_Y = 20
+BLOCKSIZE_X = 20
+BLOCKSIZE_Y = 20
+PLAYERSIZE_X = 8
+PLAYERSIZE_Y = 8
 
 # Translating arm motion to map
 THRESHOLD = 0.05
@@ -47,20 +47,23 @@ class Maze:
         :param maze_name:
         """
         self.walls = []
+        self.player = Point()
+        (self.player.x, self.player.y) =  (self.windowWidth*0.5,self.windowHeight*0.5)
+        self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        self.solved_path = Path()
+        self.wall_force = [0, 0, 0]
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
-        rospy.Timer(rospy.Duration(0.1), self.update)
+        rospy.Timer(rospy.Duration(0.01), self.update_feedback)
+        rospy.Timer(rospy.Duration(0.1), self.update_GUI)
         self.running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
         self._odom_list = tf.TransformListener()
-        self.player_rec = None
-        self.player = Point()
-        self.solved_path = Path()
-        self.wall_force = [0, 0, 0]
+
         pygame.init()
         print("Ready to host maze")
 
@@ -77,6 +80,7 @@ class Maze:
         self.N = self.maze.info.height  # number of rows
         self.M = self.maze.info.width  # number of columns
         self.maze_draw()
+
         self.player_draw()
 
         #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
@@ -85,7 +89,7 @@ class Maze:
 
 
 
-    def update(self,msg):
+    def update_GUI(self,msg):
         """
         refeshs the game on a timer callback
         :msg: not used
@@ -122,21 +126,12 @@ class Maze:
         :return:
         """
 
+
         # calls the joint state server
         #(position, velocity, effort) = self.call_return_joint_states(joint_names)
-        (position, velocity, effort) = tools.helper.call_return_joint_states()
-        # scales the input to the game
-        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
-        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
-        (self.player.x, self.player.y) =  (EE_y,EE_x) #numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y]) #AVQuestion
-        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
-        forces = WrenchStamped()
-        forces.header.frame_id = "master"
-        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision(self.player)
-        #self.check_collision(self.player)
-        self.pub_forces.publish(forces)
+
         pygame.draw.rect(self.display_surf, WHITE,
-                         (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+                         (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
     def maze_draw(self):
@@ -220,6 +215,22 @@ class Maze:
         self.pub_goal.publish(state)
         return state.data
 
+
+
+
+    def update_feedback(self,msg):
+        (position, velocity, effort) = tools.helper.call_return_joint_states()
+        # scales the input to the game
+        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
+        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
+        (self.player.x, self.player.y) =  (EE_y,EE_x)
+        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        forces = WrenchStamped()
+        forces.header.frame_id = "master"
+        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision(self.player)
+        #self.check_collision(self.player)
+        self.pub_forces.publish(forces)
+
     def check_collision(self, point):
         """
         checks if player (top left corner represented by point passed in)
@@ -267,7 +278,7 @@ class Maze:
         # Return force vector in three dimensions
         # TODO: Can we assign a force in two directions for each corner, so that they add together if multiple corners are hit?
         # TODO: That would be easier if the direction of the vectors were known. Test the below first.
-        mag = 5
+        mag = 0.5
         if all(collisions):
             print("Lost in the walls")
             #self.wall_force = [0, 0, 0]
@@ -276,13 +287,13 @@ class Maze:
                 self.wall_force = [0, 0, -mag]
                 print("Go Down")
             elif collisions[1] and collisions[2]:
-                self.wall_force = [mag, 0, 0]
+                self.wall_force = [-mag, 0, 0]
                 print("Go Left")
             elif collisions[2] and collisions[3]:
                 self.wall_force = [0, 0, mag]
                 print("Go Up")
             elif collisions[3] and collisions[0]:
-                self.wall_force = [-mag, 0, 0]
+                self.wall_force = [mag, 0, 0]
                 print("Go Right")
             else:
                 self.wall_force = [0, 0, 0]

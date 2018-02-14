@@ -55,7 +55,7 @@ class LatestJointStates:
 
     #returns (found, position, velocity, effort) for the joint joint_name
     #(found is 1 if found, 0 otherwise)
-    def return_joint_state(self, joint_name):<<<<<<< space_warrior
+    def return_joint_state(self, joint_name):
 
         #no messages yet
         if self.name == []:

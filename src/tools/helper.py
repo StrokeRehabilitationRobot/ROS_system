@@ -72,7 +72,7 @@ def make_motor_packet(motors,tau=[0,0,0],vib=0,board=0):
     msg = udpMessage()
     packet = 15*[0.0]
     packet[0:3] = motors
-    packet[4:6] = tau
+    packet[3:6] = tau
     packet[9] = vib
     msg.packet = packet
     msg.id = id
