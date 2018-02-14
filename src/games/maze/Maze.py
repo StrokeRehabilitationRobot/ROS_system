@@ -27,10 +27,10 @@ PINK = (255,200,200)
 PURPLE = (255,150,255)
 
 # Map element sizes
-BLOCKSIZE_X = 20
-BLOCKSIZE_Y = 20
-PLAYERSIZE_X = 8
-PLAYERSIZE_Y = 8
+BLOCKSIZE_X = 30
+BLOCKSIZE_Y = 30
+PLAYERSIZE_X = 10
+PLAYERSIZE_Y = 10
 
 # Translating arm motion to map
 THRESHOLD = 0.05
@@ -227,11 +227,11 @@ class Maze:
         self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
         forces = WrenchStamped()
         forces.header.frame_id = "master"
-        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision(self.player)
+        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision_adaptive()
         #self.check_collision(self.player)
         self.pub_forces.publish(forces)
 
-    def check_collision(self, point):
+    def check_collision(self):
         """
         checks if player (top left corner represented by point passed in)
         :return: 3D vector for joint torques
@@ -301,6 +301,33 @@ class Maze:
 
         return self.wall_force
 
+    def check_collision_adaptive(self):
+        walls = []
+        force_vector = []
+        k_force = -0.01
+        f_y = 0
+        f_x = 0
+        max_range = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
+
+        player_x = math.floor(float(self.player_rec.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+        player_y = math.floor(float(self.player_rec.centery)/BLOCKSIZE_Y)
+        for x in range(int(player_x) - 2, int(player_x) + 3):
+            for y in range(int(player_y) - 2, int(player_y) + 3):
+                point_index = maze_helper.index_to_cell(self.maze, x, y)
+                if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+                    wall_block = pygame.Rect((x * BLOCKSIZE_X, y * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                    walls.append(wall_block)
+        print 'wall lenght', len(walls)
+        for wall_block in walls:
+
+            d = math.sqrt( (wall_block.centerx - self.player_rec.centerx)**2 + (wall_block.centery - self.player_rec.centery)**2  )
+            theta = math.atan2( (wall_block.centery - self.player_rec.centery),(wall_block.centerx - self.player_rec.centerx) )
+            F = k_force * ( max(max_range - d,0))
+            print "F", F
+            f_y += F*math.sin(theta)
+            f_x += F*math.cos(theta)
+
+        return [ f_x, 0, f_y ]
 
 if __name__ == "__main__":
 
