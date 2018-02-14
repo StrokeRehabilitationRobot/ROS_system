@@ -4,7 +4,6 @@ from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
-import Player
 import numpy
 import sys
 from nav_msgs.msg import OccupancyGrid,Path
@@ -127,6 +126,7 @@ class Maze:
         EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
         EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
         (self.player.x, self.player.y) =  (EE_y,EE_x) #numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
+        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
         forces = WrenchStamped()
         forces.header.frame_id = "master"
         #forces.wrench.force = self.check_collision(self.player)
@@ -145,7 +145,7 @@ class Maze:
 
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
-            self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+            #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
             cell = maze_helper.check_cell(self.maze,index)
             if cell == 1:
                 pygame.draw.rect(self.display_surf, PURPLE,
@@ -155,12 +155,12 @@ class Maze:
             elif cell == 2:
                 pygame.draw.rect(self.display_surf, BLUE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
 
 
@@ -223,6 +223,15 @@ class Maze:
         checks if player (top left corner represented by point passed in)
         :return: 3D vector for joint torques
         """
+        player_left = self.player_rec.centerx - 0.5*BLOCKSIZE_X
+        player_top  = self.player_rec.centery  + 0.5*BLOCKSIZE_Y
+
+        inflated_player = pygame.Rect( (player_left,player_top,BLOCKSIZE_X,BLOCKSIZE_Y) )
+        
+        hit = inflated_player.collidelist(self.walls)
+
+        if hit > -1:
+            pygame.draw.rect(self.display_surf, GREEN , self.walls[hit], 0)
 
         # Get four corners of the player (based on top left corner passed in)
         player_topleft = Point()
@@ -235,11 +244,11 @@ class Maze:
         player_topright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
         player_topright.y = player_topleft.y/BLOCKSIZE_X
 
-        player_bottomright = Point()
+        player_bottomright   = Point()
         player_bottomright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
         player_bottomright.y = player_topleft.y + PLAYERSIZE_Y/BLOCKSIZE_X
 
-        player_bottomleft = Point()
+        player_bottomleft   = Point()
         player_bottomleft.x = player_topleft.x/BLOCKSIZE_X
         player_bottomleft.y = (player_topleft.y + PLAYERSIZE_Y)/BLOCKSIZE_X
 
