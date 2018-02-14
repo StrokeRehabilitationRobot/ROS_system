@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 #spins off a thread to listen for joint_states messages
 #and provides the same information (or subsets of) as a service
-
+import numpy as np
 import roslib
 #roslib.load_manifest('joint_states_listener')
 import rospy
 from strokeRehabSystem.srv import *
 from sensor_msgs.msg import JointState
 import threading
+from collections import deque
 
 
 #holds the latest states obtained from joint_states messages
 class LatestJointStates:
 
     def __init__(self):
+        queue_size = 5
         rospy.init_node('joint_states_listener')
         self.lock = threading.Lock()
         self.name = []
         self.position = []
-        self.velocity = []
+        self.velcity = []
         self.effort = []
+        self.position_queue = deque([], queue_size)
         self.thread = threading.Thread(target=self.joint_states_listener)
         self.thread.start()
 
@@ -36,9 +39,13 @@ class LatestJointStates:
     def joint_states_callback(self, msg):
         self.lock.acquire()
         self.name = msg.name
-        self.position = msg.position
+        self.position_queue.append(msg.position)
+        if msg.position == [0,0,0]:
+            print("Zero position message recieved")
+        self.position = np.sum(self.position_queue, 0)/len(self.position_queue)
+        #self.position = msg.position
         self.velocity = msg.velocity
-        self.effort = msg.effort
+        self.effort= msg.effort
         self.lock.release()
 
 
