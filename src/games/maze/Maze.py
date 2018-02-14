@@ -60,6 +60,7 @@ class Maze:
         self.player_rec = None
         self.player = Point()
         self.solved_path = Path()
+        self.wall_force = [0, 0, 0]
         pygame.init()
         print("Ready to host maze")
 
@@ -92,6 +93,7 @@ class Maze:
         """
 
         if self.running:
+            #AVQuestion could we speed this up by only drawing the blocks around the player's position?
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
             self.path_draw()
@@ -126,12 +128,13 @@ class Maze:
         # scales the input to the game
         EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
         EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
-        (self.player.x, self.player.y) =  (EE_y,EE_x) #numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y])
+        (self.player.x, self.player.y) =  (EE_y,EE_x) #numpy.multiply([EE_x, EE_y], [BLOCKSIZE_X, BLOCKSIZE_Y]) #AVQuestion
+        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
         forces = WrenchStamped()
         forces.header.frame_id = "master"
-        #forces.wrench.force = self.check_collision(self.player)
-        self.check_collision(self.player)
-        #self.pub_forces.publish(forces)
+        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision(self.player)
+        #self.check_collision(self.player)
+        self.pub_forces.publish(forces)
         pygame.draw.rect(self.display_surf, WHITE,
                          (EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
@@ -145,7 +148,7 @@ class Maze:
 
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
-            self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+            #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
             cell = maze_helper.check_cell(self.maze,index)
             if cell == 1:
                 pygame.draw.rect(self.display_surf, PURPLE,
@@ -155,12 +158,12 @@ class Maze:
             elif cell == 2:
                 pygame.draw.rect(self.display_surf, BLUE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
 
 
@@ -214,7 +217,6 @@ class Maze:
         state = Bool()
         state.data = abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
                     abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
-
         self.pub_goal.publish(state)
         return state.data
 
@@ -223,60 +225,70 @@ class Maze:
         checks if player (top left corner represented by point passed in)
         :return: 3D vector for joint torques
         """
+        #player_left = self.player_rec.centerx - 0.5*BLOCKSIZE_X
+        #player_top  = self.player_rec.centery  + 0.5*BLOCKSIZE_Y
+
+        #inflated_player = pygame.Rect( (player_left,player_top,BLOCKSIZE_X,BLOCKSIZE_Y) )
+
+        hit = self.player_rec.collidelist(self.walls)
+
+        if hit > -1:
+            pygame.draw.rect(self.display_surf, GREEN , self.walls[hit], 0)
 
         # Get four corners of the player (based on top left corner passed in)
         player_topleft = Point()
-        player_topleft.x = point.x/BLOCKSIZE_X
-        player_topleft.y = point.y/BLOCKSIZE_Y
-        print "x", int(point.x/BLOCKSIZE_X)
-        print "y",int(point.y/BLOCKSIZE_Y)
+        player_topleft.x = math.floor(float(point.x)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+        player_topleft.y = math.floor(float(point.y)/BLOCKSIZE_Y)
+        #print "x", int(player_topleft.x)
+        #print "y",int(player_topleft.y)
 
         player_topright = Point()
-        player_topright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
-        player_topright.y = player_topleft.y/BLOCKSIZE_X
+        player_topright.x = math.floor(float(point.x + PLAYERSIZE_X)/BLOCKSIZE_X)
+        player_topright.y = player_topleft.y#/BLOCKSIZE_Y
 
-        player_bottomright = Point()
-        player_bottomright.x = (player_topleft.x + PLAYERSIZE_X)/BLOCKSIZE_X
-        player_bottomright.y = player_topleft.y + PLAYERSIZE_Y/BLOCKSIZE_X
+        player_bottomright   = Point()
+        player_bottomright.x = math.floor(float(point.x + PLAYERSIZE_X)/BLOCKSIZE_X)
+        player_bottomright.y = math.floor(float(point.y + PLAYERSIZE_Y)/BLOCKSIZE_Y)
 
-        player_bottomleft = Point()
-        player_bottomleft.x = player_topleft.x/BLOCKSIZE_X
-        player_bottomleft.y = (player_topleft.y + PLAYERSIZE_Y)/BLOCKSIZE_X
+        player_bottomleft   = Point()
+        player_bottomleft.x = player_topleft.x#/BLOCKSIZE_X
+        player_bottomleft.y = math.floor(float(point.y + PLAYERSIZE_Y)/BLOCKSIZE_Y)
 
         player_corners = [player_topleft, player_topright, player_bottomright, player_bottomleft]
-
         # Check for each corner in a block labeled as a wall
         collisions = 4 * [False]
         for index, corner in enumerate(player_corners):
-            cell_x = corner.x #/ BLOCKSIZE_X
-            cell_y = corner.y #/ BLOCKSIZE_Y
-            point_index = maze_helper.index_to_cell(self.maze, cell_x, cell_y)
-            print int(point_index)
+            point_index = maze_helper.index_to_cell(self.maze, corner.x, corner.y)
             if maze_helper.check_cell(self.maze, int(point_index)) == 1:
                 collisions[index] = True
 
         print collisions
 
         # Return force vector in three dimensions
-        if collisions[0] and collisions[1]:
-            #return [1, 0, 0]
-            print("Go Down")
-        elif collisions[1] and collisions[2]:
-            #return [0, -1, 0]
-            print("Go Left")
-        elif collisions[2] and collisions[3]:
-            #return [-1, 0, 0]
-            print("Go Up")
-        elif collisions[3] and collisions[0]:
-            #return [0, 1, 0]
-            print("Go Right")
-        elif collisions[0] or collisions[1]:
-            #return [1, 0, 0]
-            print("Go Down")
-        elif collisions[2] or collisions[3]:
-            #return [-1, 0, 0]
-            print("Go Up")
+        # TODO: Can we assign a force in two directions for each corner, so that they add together if multiple corners are hit?
+        # TODO: That would be easier if the direction of the vectors were known. Test the below first.
+        mag = 5
+        if all(collisions):
+            print("Lost in the walls")
+            #self.wall_force = [0, 0, 0]
+        else:
+            if collisions[0] and collisions[1]:
+                self.wall_force = [0, 0, -mag]
+                print("Go Down")
+            elif collisions[1] and collisions[2]:
+                self.wall_force = [mag, 0, 0]
+                print("Go Left")
+            elif collisions[2] and collisions[3]:
+                self.wall_force = [0, 0, mag]
+                print("Go Up")
+            elif collisions[3] and collisions[0]:
+                self.wall_force = [-mag, 0, 0]
+                print("Go Right")
+            else:
+                self.wall_force = [0, 0, 0]
+                print("All clear")
 
+        return self.wall_force
 
 
 if __name__ == "__main__":
