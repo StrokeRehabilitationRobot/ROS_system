@@ -52,7 +52,7 @@ def torque_callback(force):
     if force.header.frame_id == "slave":
         board = 1
     else:
-        board = 1
+        board = 0
 
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
@@ -68,9 +68,9 @@ def motor_callback(force):
     (position, velocity, effort) = tools.helper.call_return_joint_states()
 
     if force.header.frame_id == "slave":
-        board = 0
-    else:
         board = 1
+    else:
+        board = 0
 
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
