@@ -52,7 +52,7 @@ def torque_callback(force):
     if force.header.frame_id == "slave":
         board = 1
     else:
-        board = 1
+        board = 0
 
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
@@ -109,7 +109,7 @@ def udp_server():
     rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
     rospy.Subscriber("motors_server", WrenchStamped, motor_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
-    rospy.Timer(rospy.Duration(0.01), status_callback)
+    rospy.Timer(rospy.Duration(0.001), status_callback)
     #udp = UDP.UDP(9876)
     rospy.spin()
 

@@ -4,6 +4,7 @@ from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
+
 import numpy
 import sys
 from nav_msgs.msg import OccupancyGrid,Path

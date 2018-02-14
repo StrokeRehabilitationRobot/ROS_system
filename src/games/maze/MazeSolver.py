@@ -5,11 +5,9 @@ import Maze
 import pygame
 import math
 import maze_helper
-<<<<<<< HEAD
-from nav_msgs.msg import Path, OccupancyGrid
-=======
+
 from nav_msgs.msg import OccupancyGrid, Path
->>>>>>> 80331909878824344d6f8a66bc0e81fc3fb371ed
+
 from geometry_msgs.msg import PoseStamped
 import rospy
 from pygame.locals import *
