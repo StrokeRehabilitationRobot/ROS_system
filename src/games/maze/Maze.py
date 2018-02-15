@@ -1,12 +1,11 @@
 #!/usr/bin/env python
+import sys
 import pygame
 from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
-
 import numpy as np
-import sys
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
 from geometry_msgs.msg import Pose,Point, WrenchStamped
@@ -15,6 +14,8 @@ import rospy
 import tf
 import tools.joint_states_listener
 import tools.helper
+import controllers.HapticController
+
 
 # Colors for use throughout
 RED = (255,0,0)
@@ -62,7 +63,9 @@ class Maze:
         self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
-        self._odom_list = tf.TransformListener()
+        d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
+        d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
+        self.controller = HapticController.HapticController(0.01,0.05,d_obs,d_goal)
 
         pygame.init()
         print("Ready to host maze")

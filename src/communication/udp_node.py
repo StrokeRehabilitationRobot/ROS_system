@@ -15,9 +15,6 @@ udp = UDP.UDP(9876)
 robot_state = rospy.Publisher('joint_states', JointState, queue_size=1,latch=True)
 
 
-
-
-
 def udp_callback(downstream):
 
     q = []

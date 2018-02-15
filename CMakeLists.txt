@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  geometry_msgs
   genmsg
 )
 catkin_python_setup()
@@ -14,17 +15,24 @@ catkin_python_setup()
 add_service_files(DIRECTORY srv FILES UDPMessage.srv ReturnJointStates.srv)
 # add_service_files(DIRECTORY srv FILES ReturnJointStates.srv)
 
-add_message_files(DIRECTORY msg FILES udpMessage.msg )
+add_message_files(DIRECTORY msg FILES
+
+udpMessage.msg
+hapticForce.msg
+
+)
 
 
-generate_messages(DEPENDENCIES std_msgs)
+generate_messages(DEPENDENCIES
+std_msgs
+geometry_msgs
+)
 
 
 catkin_package(
   INCLUDE_DIRS src/tools
   INCLUDE_DIRS src/games
-
-
+  INCLUDE_DIRS src/controllers
 )
 install(PROGRAMS scripts/hid2udp.sh DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 include_directories(
