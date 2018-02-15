@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose,Point, WrenchStamped
 import math
 class HapticController():
 
-    def __init__(self, k_obs, k_goal, d_obs, d_goal ):
+    def __init__(self, k_obs, k_goal, d_obs, d_goal, goal_angle=math.pi/2 ):
         """
         """
         #rospy.init_node("haptics",anonymous=True)
@@ -15,6 +15,7 @@ class HapticController():
         self.k_goal = k_goal
         self.d_obs  = d_obs
         self.d_goal = d_goal
+        self.goal_angle = goal_angle
 
     def make_force(self,player, obstacles=[],goals=[]):
 
@@ -24,12 +25,20 @@ class HapticController():
         f_y = 0
         f_x = 0
 
-        for g in goals:
+        for goal_num, g in enumerate(goals):
             d = math.sqrt( (g.x - player.x)**2 + (g.y - player.y)**2  )
-            theta = math.atan2( (g.y - player.y),(g.x - player.x) )
-            F = self.k_goal * ( max(self.d_goal - d,0))
-            f_y += round(F*math.sin(theta),2)
-            f_x += round(F*math.cos(theta),2)
+            theta_gp = math.atan2( (g.y - player.y),(g.x - player.x) )
+            if len(goals) == 1:
+                F = self.k_goal * ( max(self.d_goal - d,0))
+                f_y += round(F*math.sin(theta_gp),2)
+                f_x += round(F*math.cos(theta_gp),2)
+            else:
+                theta_gg = math.atan2( (goals[goal_num].y - goals[goal_num - 1].y),(goals[goal_num].x - goals[goal_num - 1].x) )
+                if abs(theta_gg  - theta_gp) <= self.goal_angle:
+                    F = self.k_goal * ( max(self.d_goal - d,0))
+                    f_y += round(F*math.sin(theta_gp),2)
+                    f_x += round(F*math.cos(theta_gp),2)
+
 
         for obs in obstacles:
             d = math.sqrt( (obs.x - player.x)**2 + (obs.y - player.y)**2  )

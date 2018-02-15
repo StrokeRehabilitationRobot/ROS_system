@@ -199,8 +199,8 @@ class Maze:
         """
         for point in self.solved_path.poses:
 
-            pixels_x = (point.pose.position.x * 50) + math.floor(abs((50 - 20) * 0.5))
-            pixels_y = (point.pose.position.y * 50) + math.floor(abs((50 - 20) * 0.5))
+            pixels_x = (point.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+            pixels_y = (point.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
             pygame.draw.rect(self.display_surf, GREEN,
                              (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
