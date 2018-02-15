@@ -5,7 +5,7 @@ import maze_helper
 import math
 import mazeBank
 
-import numpy
+import numpy as np
 import sys
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
@@ -47,6 +47,7 @@ class Maze:
         :param maze_name:
         """
         self.walls = []
+        self.goal_rec = None
         self.player = Point()
         (self.player.x, self.player.y) =  (self.windowWidth*0.5,self.windowHeight*0.5)
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
@@ -55,7 +56,6 @@ class Maze:
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
-        rospy.Timer(rospy.Duration(0.01), self.update_feedback)
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
         self.running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
@@ -66,7 +66,6 @@ class Maze:
 
         pygame.init()
         print("Ready to host maze")
-
 
 
     def on_init(self):
@@ -103,9 +102,9 @@ class Maze:
             self.path_draw()
             self.player_draw()
             pygame.display.update()
-            self.pub_player.publish(self.player)
-            start = self.at_start()
-            goal  = self.at_goal()
+            #self.pub_player.publish(self.player)
+            #start = self.at_start()
+            #goal  = self.at_goal()
 
     def maze_callback(self,msg):
         """
@@ -125,6 +124,20 @@ class Maze:
         draws the player location
         :return:
         """
+        (position, velocity, effort) = tools.helper.call_return_joint_states()
+        # scales the input to the game
+        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
+        EE_x = tools.helper.remap(position[2],1.9,0.6,0,self.windowHeight )
+
+        (self.player.x, self.player.y) =  (EE_y,EE_x)
+        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        forces = WrenchStamped()
+        forces.header.frame_id = "master"
+        wall_force = self.check_collision_adaptive()
+        goal_force = self.goal_adaptive()
+        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = np.add(wall_force,goal_force)
+        #self.check_collision(self.player)
+        self.pub_forces.publish(forces)
 
 
         # calls the joint state server
@@ -158,7 +171,7 @@ class Maze:
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                self.goal_rec = pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y)
 
 
 
@@ -167,10 +180,10 @@ class Maze:
         """
         call_back for the optimal path
         sets the path
-        :param msg: Path message
-
+        :param msg: Path messaga
         :return:
         """
+
         self.solved_path = msg
 
 
@@ -216,91 +229,6 @@ class Maze:
         return state.data
 
 
-
-
-    def update_feedback(self,msg):
-        (position, velocity, effort) = tools.helper.call_return_joint_states()
-        # scales the input to the game
-        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
-        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.windowHeight )
-        (self.player.x, self.player.y) =  (EE_y,EE_x)
-        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
-        forces = WrenchStamped()
-        forces.header.frame_id = "master"
-        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = self.check_collision_adaptive()
-        #self.check_collision(self.player)
-        self.pub_forces.publish(forces)
-
-    def check_collision(self):
-        """
-        checks if player (top left corner represented by point passed in)
-        :return: 3D vector for joint torques
-        """
-        #player_left = self.player_rec.centerx - 0.5*BLOCKSIZE_X
-        #player_top  = self.player_rec.centery  + 0.5*BLOCKSIZE_Y
-
-        #inflated_player = pygame.Rect( (player_left,player_top,BLOCKSIZE_X,BLOCKSIZE_Y) )
-
-        hit = self.player_rec.collidelist(self.walls)
-
-        if hit > -1:
-            pygame.draw.rect(self.display_surf, GREEN , self.walls[hit], 0)
-
-        # Get four corners of the player (based on top left corner passed in)
-        player_topleft = Point()
-        player_topleft.x = math.floor(float(point.x)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
-        player_topleft.y = math.floor(float(point.y)/BLOCKSIZE_Y)
-        #print "x", int(player_topleft.x)
-        #print "y",int(player_topleft.y)
-
-        player_topright = Point()
-        player_topright.x = math.floor(float(point.x + PLAYERSIZE_X)/BLOCKSIZE_X)
-        player_topright.y = player_topleft.y#/BLOCKSIZE_Y
-
-        player_bottomright   = Point()
-        player_bottomright.x = math.floor(float(point.x + PLAYERSIZE_X)/BLOCKSIZE_X)
-        player_bottomright.y = math.floor(float(point.y + PLAYERSIZE_Y)/BLOCKSIZE_Y)
-
-        player_bottomleft   = Point()
-        player_bottomleft.x = player_topleft.x#/BLOCKSIZE_X
-        player_bottomleft.y = math.floor(float(point.y + PLAYERSIZE_Y)/BLOCKSIZE_Y)
-
-        player_corners = [player_topleft, player_topright, player_bottomright, player_bottomleft]
-        # Check for each corner in a block labeled as a wall
-        collisions = 4 * [False]
-        for index, corner in enumerate(player_corners):
-            point_index = maze_helper.index_to_cell(self.maze, corner.x, corner.y)
-            if maze_helper.check_cell(self.maze, int(point_index)) == 1:
-                collisions[index] = True
-
-        print collisions
-
-        # Return force vector in three dimensions
-        # TODO: Can we assign a force in two directions for each corner, so that they add together if multiple corners are hit?
-        # TODO: That would be easier if the direction of the vectors were known. Test the below first.
-        mag = 0.5
-        if all(collisions):
-            print("Lost in the walls")
-            #self.wall_force = [0, 0, 0]
-        else:
-            if collisions[0] and collisions[1]:
-                self.wall_force = [0, 0, -mag]
-                print("Go Down")
-            elif collisions[1] and collisions[2]:
-                self.wall_force = [-mag, 0, 0]
-                print("Go Left")
-            elif collisions[2] and collisions[3]:
-                self.wall_force = [0, 0, mag]
-                print("Go Up")
-            elif collisions[3] and collisions[0]:
-                self.wall_force = [mag, 0, 0]
-                print("Go Right")
-            else:
-                self.wall_force = [0, 0, 0]
-                print("All clear")
-
-        return self.wall_force
-
     def check_collision_adaptive(self):
         walls = []
         force_vector = []
@@ -311,23 +239,47 @@ class Maze:
 
         player_x = math.floor(float(self.player_rec.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
         player_y = math.floor(float(self.player_rec.centery)/BLOCKSIZE_Y)
-        for x in range(int(player_x) - 2, int(player_x) + 3):
-            for y in range(int(player_y) - 2, int(player_y) + 3):
+        for x in range(int(player_x) - 1, int(player_x) + 2):
+            for y in range(int(player_y) - 1, int(player_y) + 2):
                 point_index = maze_helper.index_to_cell(self.maze, x, y)
                 if maze_helper.check_cell(self.maze, int(point_index)) == 1:
                     wall_block = pygame.Rect((x * BLOCKSIZE_X, y * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                    pygame.draw.rect(self.display_surf, GREEN , wall_block, 0)
                     walls.append(wall_block)
-        print 'wall lenght', len(walls)
+        pygame.display.update()
+
         for wall_block in walls:
 
             d = math.sqrt( (wall_block.centerx - self.player_rec.centerx)**2 + (wall_block.centery - self.player_rec.centery)**2  )
             theta = math.atan2( (wall_block.centery - self.player_rec.centery),(wall_block.centerx - self.player_rec.centerx) )
             F = k_force * ( max(max_range - d,0))
-            print "F", F
-            f_y += F*math.sin(theta)
-            f_x += F*math.cos(theta)
 
-        return [ f_x, 0, f_y ]
+            f_y += round(F*math.sin(theta),2)
+            f_x += round(F*math.cos(theta),2)
+
+        print "f_x", f_x
+        print "f_y", f_y
+        return [ round(f_x,1), 0, -round(f_y, 1) ]
+
+    def goal_adaptive(self):
+
+        k_force = 0.05
+        f_y = 0
+        f_x = 0
+        max_range = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
+
+
+        d = math.sqrt( (self.goal_rec.centerx - self.player_rec.centerx)**2 + (self.goal_rec.centery - self.player_rec.centery)**2  )
+        theta = math.atan2( (self.goal_rec.centery - self.player_rec.centery),(self.goal_rec.centerx - self.player_rec.centerx) )
+        F = k_force * ( max(max_range - d,0))
+
+        f_y += round(F*math.sin(theta),2)
+        f_x += round(F*math.cos(theta),2)
+
+        return [ round(f_x,1), 0, -round(f_y, 1) ]
+
+
+
 
 if __name__ == "__main__":
 
