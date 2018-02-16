@@ -55,9 +55,9 @@ def check_cell(maze, pt):
     """
     N = maze.info.width
     M = maze.info.height
-    
+
     if pt not in range(len(maze.data)):
-        return 0
+        return 1
     # If the cell in the maze array is a 1, the cell is a wall
     elif maze.data[pt] == 1:
         return 1
