@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import sys
 import pygame
 from pygame.locals import *
@@ -40,7 +41,7 @@ Y_CUTOFF = 0.35
 
 
 class Maze:
-    windowWidth = 800
+    windowWidth = 1000
     windowHeight = 600
     def __init__(self, maze_name="maze1"):
         """
@@ -49,6 +50,7 @@ class Maze:
         """
         self.walls = []
         self.goal_rec = None
+        self.start_rec = None
         self.player = Point()
         (self.player.x, self.player.y) =  (self.windowWidth*0.5,self.windowHeight*0.5)
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
@@ -65,7 +67,7 @@ class Maze:
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
-        self.controller = controllers.HapticController.HapticController(0.01,0.05,d_obs,d_goal)
+        self.controller = controllers.HapticController.HapticController(0.01,0.001,d_obs,d_goal)
 
         pygame.init()
         print("Ready to host maze")
@@ -172,6 +174,7 @@ class Maze:
                 pygame.draw.rect(self.display_surf, BLUE,
                                  (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
                 #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                self.start_rec = pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y)
 
             elif cell == 3:
                 pygame.draw.rect(self.display_surf, RED,
@@ -259,11 +262,28 @@ class Maze:
 
     def goal_adaptive(self):
 
-        point = Point()
-        point.x = self.goal_rec.centerx
-        point.y = self.goal_rec.centery
+        goal = Point()
+        start = Point()
+        points = []
+        goal.x = self.goal_rec.centerx
+        goal.y = self.goal_rec.centery
+        start.x = self.start_rec.centerx
+        start.y = self.start_rec.centery
+        points.append(start)
 
-        return [point]
+        if self.solved_path.poses:
+            print "have waypoint"
+            for pose in self.solved_path.poses:
+                pt = Point()
+
+                pt.x = (pose.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+                pt.y = (pose.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+                print pt
+                points.append(pt)
+
+        points.append(goal)
+
+        return points
 
 
 

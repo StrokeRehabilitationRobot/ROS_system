@@ -16,17 +16,21 @@ def a_star(maze):
     # find shortest path with fastest search
     start = maze_helper.getStart(maze) #column, row
     goal = maze_helper.getGoal(maze) #column, row
-    print "start ,", start
-    print "neighbors: ", maze_helper.neighbors_manhattan(maze, start[0], start[1])
+    print "start", start
+    print  "goal", goal
+    print "width", maze.info.width
+    print "height", maze.info.height
     frontier = Queue.PriorityQueue()
     frontier.put(start)
     came_from = {}
     cost_so_far = {}
     came_from[start] = None
     cost_so_far[start] = 0
+    print "solving"
 
     while not frontier.empty():
         current = frontier.get()
+        
         for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
             new_cost = cost_so_far[current] + costmove(current, next, came_from[current])
             if next not in cost_so_far or new_cost < cost_so_far[next]:
@@ -119,7 +123,8 @@ def break_into_lean_segments(my_path):
 
         if not ((next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
                 or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y)):
-            segments.poses.append(step)
+            segments.poses.append(prev)
+            segments.poses.append(next)
 
     return segments
 
