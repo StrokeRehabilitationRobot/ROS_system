@@ -129,13 +129,13 @@ class Maze:
         draws the player location
         :return:
         """
-        (position, velocity, effort) = tools.helper.call_return_joint_states()
-        # scales the input to the game
-        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
-        EE_x = tools.helper.remap(position[2],1.9,0.6,0,self.windowHeight )
+        # (position, velocity, effort) = tools.helper.call_return_joint_states()
+        # # scales the input to the game
+        # EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
+        # EE_x = tools.helper.remap(position[2],1.9,0.6,0,self.windowHeight )
 
-        (self.player.x, self.player.y) =  (EE_y,EE_x)
-        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
+        self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player_rec.centerx
         player_center.y = self.player_rec.centery
@@ -246,7 +246,9 @@ class Maze:
         for x in range(int(player_x) - 1, int(player_x) + 2):
             for y in range(int(player_y) - 1, int(player_y) + 2):
                 point_index = maze_helper.index_to_cell(self.maze, x, y)
-                if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+                neighbors = maze_helper.neighbors_manhattan(self.maze, x,y)
+                goal = maze_helper.getGoal(self.maze)
+                if maze_helper.check_cell(self.maze, int(point_index)) == 1 and goal not in neighbors:
                     point = Point()
                     wall_block = pygame.Rect((x * BLOCKSIZE_X, y * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
                     point.x = wall_block.centerx
@@ -275,7 +277,6 @@ class Maze:
             print "have waypoint"
             for pose in self.solved_path.poses:
                 pt = Point()
-
                 pt.x = (pose.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
                 pt.y = (pose.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
                 print pt

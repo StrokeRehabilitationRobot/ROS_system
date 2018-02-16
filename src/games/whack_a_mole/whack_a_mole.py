@@ -1,6 +1,12 @@
-# /usr/bin/env python
-import numpy
+#!/usr/bin/env python
+
 import sys
+import pygame
+from pygame.locals import *
+import maze_helper
+import math
+import mazeBank
+import numpy as np
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
 from geometry_msgs.msg import Pose,Point, WrenchStamped
@@ -9,289 +15,279 @@ import rospy
 import tf
 import tools.joint_states_listener
 import tools.helper
-import pygame
-import random
-from pygame import *
-import rospy
-import time
+import controllers.HapticController
 
 
-class GameManager:
-    def __init__(self):
-        # Define constants
+# Colors for use throughout
+RED = (255,0,0)
+GREEN = (0,255,0)
+BLUE = (0,0,255)
+DARK_BLUE = (0,0,128)
+WHITE = (255,255,255)
+BLACK = (0,0,0)
+PINK = (255,200,200)
+PURPLE = (255,150,255)
 
-        rospy.init_node("whack_a_mole")
-        self._odom_list = tf.TransformListener()
-        self.game_setup()
+# Map element sizes
+BLOCKSIZE_X = 30
+BLOCKSIZE_Y = 30
+PLAYERSIZE_X = 10
+PLAYERSIZE_Y = 10
+
+# Translating arm motion to map
+THRESHOLD = 0.05
+Y_CUTOFF = 0.35
 
 
-    def game_setup(self):
+
+class WhackAMole:
+    windowWidth = 1000
+    windowHeight = 600
+    def __init__(self, maze_name="maze1"):
         """
-        This sets up the game
+
+        :param maze_name:
         """
-        self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
-        self.FPS = 15
-        self.MOLE_WIDTH = 90
-        self.MOLE_HEIGHT = 81
-        self.FONT_SIZE = 31
-        self.FONT_TOP_MARGIN = 26
-        self.LEVEL_SCORE_GAP = 4
-        self.LEFT_MOUSE_BUTTON = 1
-        self.GAME_TITLE = "Whack A Mole"
-        # Initialize player's score, number of missed hits and level
-        self.score = 0
+        self.walls = []
+        self.goal_rec = None
+        self.start_rec = None
+        self.player = Point()
+        (self.player.x, self.player.y) =  (self.windowWidth*0.5,self.windowHeight*0.5)
+        self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        self.solved_path = Path()
+        self.wall_force = [0, 0, 0]
+        rospy.init_node('whackAMoleGame', anonymous=True)
+            rospy.Timer(rospy.Duration(0.1), self.update_GUI)
+        self.running = False
+        self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
+        self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
+        self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
+        self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
+        d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
+        d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
+        self.controller = controllers.HapticController.HapticController(0.01,0.001,d_obs,d_goal)
 
-        self.misses = 0
-        self.level = 1
-        # Initialize screenFile "/opt/ros/kinetic/lib/python2.7/dist-packages/rospy/impl/tcpros_service.py
-        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        pygame.display.set_caption(self.GAME_TITLE)
-        self.background = pygame.image.load("images/bg.png")
-        self.hammer = pygame.image.load("images/hammer.png")
-        # Font object for displaying text
-        self.font_obj = pygame.font.Font('./fonts/GROBOLD.ttf', self.FONT_SIZE)
-        # Initialize the mole's sprite sheet
-        # 6 different states
-        sprite_sheet = pygame.image.load("images/mole.png")
-        self.mole = []
-        self.mole.append(sprite_sheet.subsurface(169, 0, 90, 81))
-        self.mole.append(sprite_sheet.subsurface(309, 0, 90, 81))
-        self.mole.append(sprite_sheet.subsurface(449, 0, 90, 81))
-        self.mole.append(sprite_sheet.subsurface(575, 0, 116, 81))
-        self.mole.append(sprite_sheet.subsurface(717, 0, 116, 81))
-        self.mole.append(sprite_sheet.subsurface(853, 0, 116, 81))
-        # Positions of the holes in background
-        self.hole_positions = []
-        self.hole_positions.append((381, 295))
-        self.hole_positions.append((119, 366))
-        self.hole_positions.append((179, 169))
-        self.hole_positions.append((404, 479))
-        self.hole_positions.append((636, 366))
-        self.hole_positions.append((658, 232))
-        self.hole_positions.append((464, 119))
-        self.hole_positions.append((95, 43))
-        self.hole_positions.append((603, 11))
-        self.EE = (self.SCREEN_WIDTH*0.5,self.SCREEN_HEIGHT*0.5)
-        # Init debugger
-        self.debugger = Debugger("debug")
-        # Sound effects
-        self.soundEffect = SoundEffect()
-    # Calculate the player level according to his current score & the LEVEL_SCORE_GAP constant
-    def get_player_level(self):
-        newLevel = 1 + int(self.score / self.LEVEL_SCORE_GAP)
-        if newLevel != self.level:pass
-            # if player get a new level play this sound
-            #self.soundEffect.playLevelUp()
-        return 1 + int(self.score / self.LEVEL_SCORE_GAP)
-
-    # Get the new duration between the time the mole pop up and down the holes
-    # It's in inverse ratio to the player's current level
-    def get_interval_by_level(self, initial_interval):
-        new_interval = initial_interval - self.level * 0.15
-        if new_interval > 0:
-            return new_interval
-        else:
-
-            return 0.05
-
-    # Check whether the mouse click hit the mole or not
-    def is_mole_hit(self, mouse_position, current_hole_position):
-        mouse_x = mouse_position[0]
-        mouse_y = mouse_position[1]
-        current_hole_x = current_hole_position[0]
-        current_hole_y = current_hole_position[1]
-        if (mouse_x > current_hole_x) and (mouse_x < current_hole_x + self.MOLE_WIDTH) and (mouse_y > current_hole_y) and (mouse_y < current_hole_y + self.MOLE_HEIGHT):
-            return True
-        else:
-            return False
+        pygame.init()
+        print("Ready to host maze")
 
 
-    def player_update(self):
+    def on_init(self):
+        """
+        sets up the game
+        :return:
+        """
+        self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
+        self.running = True
+        pygame.display.set_caption('Travel from Blue Square to Red Square')
+        self.N = self.maze.info.height  # number of rows
+        self.M = self.maze.info.width  # number of columns
+        self.maze_draw()
 
-        #self._odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
-        #(position, orientation) = self._odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        self.player_draw()
+
+        #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+        #start_loc_pixels_y = (start[1] * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+        pygame.display.update()
 
 
+
+    def update_GUI(self,msg):
+        """
+        refeshs the game on a timer callback
+        :msg: not used
+        :return:
+        """
+
+        if self.running:
+            #AVQuestion could we speed this up by only drawing the blocks around the player's position?
+            self.display_surf.fill((0, 0, 0))
+            self.maze_draw()
+            self.path_draw()
+            self.player_draw()
+            pygame.display.update()
+            #self.pub_player.publish(self.player)
+            #start = self.at_start()
+            #goal  = self.at_goal()
+
+    def maze_callback(self,msg):
+        """
+        saves the maze and sets up the game
+        :param msg: occupany grid message
+        :return:
+        """
+        self.maze = msg
+        self.on_init()
+
+    def invert(self):
+        for index, row in enumerate(self.maze):
+            self.maze[index] = row[::-1]
+
+    def player_draw(self):
+        """
+        draws the player location
+        :return:
+        """
         (position, velocity, effort) = tools.helper.call_return_joint_states()
+        # scales the input to the game
+        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
+        EE_x = tools.helper.remap(position[2],1.9,0.6,0,self.windowHeight )
+
+        (self.player.x, self.player.y) =  (EE_y,EE_x)
+        self.player_rec = pygame.Rect((EE_y, EE_x, PLAYERSIZE_X, PLAYERSIZE_Y) )
+        player_center = Point()
+        player_center.x = self.player_rec.centerx
+        player_center.y = self.player_rec.centery
+        wall_centers = self.check_collision_adaptive()
+        goal_centers = self.goal_adaptive()
+        self.controller.make_force(player_center,wall_centers,goal_centers)
+        #[forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = np.add(wall_force,goal_force)
+        #self.check_collision(self.player)
+        #self.pub_forces.publish(forces)
 
 
-        EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.SCREEN_WIDTH )
-        EE_x = tools.helper.remap(position[2],2.1,0.6,0,self.SCREEN_HEIGHT )
-        self.EE = (EE_y,EE_x)
-        self.screen.blit(self.hammer, self.EE)
+        # calls the joint state server
+        #(position, velocity, effort) = self.call_return_joint_states(joint_names)
+
+        pygame.draw.rect(self.display_surf, WHITE,
+                         (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
 
-    # Update the game states, re-calculate the player's score, misses, level
-    def update(self):
-        # Update the player's score
-        current_score_string = "SCORE: " + str(self.score)
-        score_text = self.font_obj.render(current_score_string, True, (255, 255, 255))
-        score_text_pos = score_text.get_rect()
-        score_text_pos.centerx = self.background.get_rect().centerx
-        score_text_pos.centery = self.FONT_TOP_MARGIN
-        self.screen.blit(score_text, score_text_pos)
-        # Update the player's misses
-        current_misses_string = "MISSES: " + str(self.misses)
-        misses_text = self.font_obj.render(current_misses_string, True, (255, 255, 255))
-        misses_text_pos = misses_text.get_rect()
-        misses_text_pos.centerx = self.SCREEN_WIDTH / 5 * 4
-        misses_text_pos.centery = self.FONT_TOP_MARGIN
-        self.screen.blit(misses_text, misses_text_pos)
-        # Update the player's level
-        current_level_string = "LEVEL: " + str(self.level)
-        level_text = self.font_obj.render(current_level_string, True, (255, 255, 255))
-        level_text_pos = level_text.get_rect()
-        level_text_pos.centerx = self.SCREEN_WIDTH / 5 * 1
-        level_text_pos.centery = self.FONT_TOP_MARGIN
-        self.screen.blit(level_text, level_text_pos)
+    def maze_draw(self):
+        """
+        callback for the maze
+        draws the maze
+        :return:
+        """
 
-    # Start the game's main loop
-    # Contains some logic for handling animations, mole hit events, etc..
-    def start(self):
-        cycle_time = 0
-        num = -1
-        loop = True
-        is_down = False
-        interval = 0.1
-        initial_interval = 1
-        frame_num = 0
-        left = 0
-        # Time control variables
-        clock = pygame.time.Clock()
+        for index, pt in enumerate(self.maze.data):
+            bx,by = maze_helper.get_i_j(self.maze,index)
+            #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+            cell = maze_helper.check_cell(self.maze,index)
+            if cell == 1:
+                pygame.draw.rect(self.display_surf, PURPLE,
+                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
-        for i in range(len(self.mole)):
-            self.mole[i].set_colorkey((0, 0, 0))
-            self.mole[i] = self.mole[i].convert_alpha()
+            elif cell == 2:
+                pygame.draw.rect(self.display_surf, BLUE,
+                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                self.start_rec = pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y)
 
-        while loop:
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    loop = False
-                if event.type == MOUSEBUTTONDOWN and event.button == self.LEFT_MOUSE_BUTTON:
-                    #self.soundEffect.playFire()
-                    if self.is_mole_hit(mouse.get_pos(), self.hole_positions[frame_num]) and num > 0 and left == 0:
-                        num = 3
-                        left = 14
-                        is_down = False
-                        interval = 0
-                        self.score += 1  # Increase player's score
-                        self.level = self.get_player_level()  # Calculate player's level
-                        # Stop popping sound effect
-                        #self.soundEffect.stopPop()
-                        # Play hurt sound
-                        #self.soundEffect.playHurt()
-                        self.update()
-                    else:
-                        self.misses += 1
-                        self.player_update()
-                        self.update()
-
-            if num > 5:
-                self.screen.blit(self.background, (0, 0))
-                #self.player_update()
-                self.update()
-                num = -1
-                left = 0
-
-            if num == -1:
-                self.screen.blit(self.background, (0, 0))
-                #self.player_update()
-
-                self.update()
-                num = 0
-                is_down = False
-                interval = 0.5
-                frame_num = random.randint(0, 8)
-
-            mil = clock.tick(self.FPS)
-            sec = mil / 1000.0
-            cycle_time += sec
-            if cycle_time > interval:
-                pic = self.mole[num]
-                self.screen.blit(self.background, (0, 0))
-                self.screen.blit(pic, (self.hole_positions[frame_num][0] - left, self.hole_positions[frame_num][1]))
-
-                #self.player_update()
-
-                self.update()
-                if is_down is False:
-                    num += 1
-                else:
-                    num -= 1
-                if num == 4:
-                    interval = 0.3
-                elif num == 3:
-                    num -= 1
-                    is_down = True
-
-                    #self.soundEffect.playPop()
-                    interval = self.get_interval_by_level(initial_interval)  # get the newly decreased interval value
-                else:
-                    interval = 0.1
-                cycle_time = 0
-            # Update the display
-            time.sleep(0.1)
-            self.player_update()
-
-            pygame.display.flip()
+            elif cell == 3:
+                pygame.draw.rect(self.display_surf, RED,
+                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                self.goal_rec = pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y)
 
 
-# The Debugger class - use this class for printing out debugging information
-class Debugger:
-    def __init__(self, mode):
-        self.mode = mode
-
-    def log(self, message):
-        if self.mode is "debug":
-            print("> DEBUG: " + str(message))
 
 
-class SoundEffect:
-    def __init__(self):
-        self.mainTrack = pygame.mixer.music.load("sounds/themesong.wav")
-        self.fireSound = pygame.mixer.Sound("sounds/fire.wav")
-        self.fireSound.set_volume(1.0)
-        self.popSound = pygame.mixer.Sound("sounds/pop.wav")
-        self.hurtSound = pygame.mixer.Sound("sounds/hurt.wav")
-        self.levelSound = pygame.mixer.Sound("sounds/point.wav")
-        #pygame.mixer.music.play(-1)
+    def path_callback(self,msg):
+        """
+        call_back for the optimal path
+        sets the path
+        :param msg: Path messaga
+        :return:
+        """
 
-    def playFire(self):
-        self.fireSound.play()
+        self.solved_path = msg
 
-    def stopFire(self):
-        self.fireSound.sop()
 
-    def playPop(self):
-        self.popSound.play()
+    def path_draw(self):
+        """
+        draws the path
+        :return:
+        """
+        for point in self.solved_path.poses:
 
-    def stopPop(self):
-        self.popSound.stop()
+            pixels_x = (point.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+            pixels_y = (point.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+            pygame.draw.rect(self.display_surf, GREEN,
+                             (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
-    def playHurt(self):
-        self.hurtSound.play()
 
-    def stopHurt(self):
-        self.hurtSound.stop()
+    def at_start(self):
+        """
+        checks if we are at the starting location
+        :return: boolean check if we are at the starting location
+        """
 
-    def playLevelUp(self):
-        self.levelSound.play()
+        start = maze_helper.getStart(self.maze)
+        start_pixels = (start[0] * BLOCKSIZE_X, start[1] * BLOCKSIZE_Y)
+        state = Bool()
+        state.data = abs(self.player.x - start_pixels[0]) < PLAYERSIZE_X and \
+                     abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
 
-    def stopLevelUp(self):
-        self.levelSound.stop()
+        self.pub_start.publish(state)
+        return state.data
 
-###############################################################
-# Initialize the game
+    def at_goal(self):
+        """
+        checks if we are at the goal
+        :return: boolean check if we are at goal
+        """
+        goal = maze_helper.getGoal(self.maze)
+        goal_pixels = (goal[0] * BLOCKSIZE_X, goal[1] * BLOCKSIZE_Y)
+        state = Bool()
+        state.data = abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
+                    abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
+        self.pub_goal.publish(state)
+        return state.data
+
+
+    def check_collision_adaptive(self):
+        walls = []
+        centers = []
+
+        player_x = math.floor(float(self.player_rec.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+        player_y = math.floor(float(self.player_rec.centery)/BLOCKSIZE_Y)
+        for x in range(int(player_x) - 1, int(player_x) + 2):
+            for y in range(int(player_y) - 1, int(player_y) + 2):
+                point_index = maze_helper.index_to_cell(self.maze, x, y)
+                if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+                    point = Point()
+                    wall_block = pygame.Rect((x * BLOCKSIZE_X, y * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                    point.x = wall_block.centerx
+                    point.y = wall_block.centery
+                    centers.append(point)
+                    walls.append(wall_block)
+                    pygame.draw.rect(self.display_surf, GREEN , wall_block, 0)
+
+        pygame.display.update()
+
+
+        return centers
+
+    def goal_adaptive(self):
+
+        goal = Point()
+        start = Point()
+        points = []
+        goal.x = self.goal_rec.centerx
+        goal.y = self.goal_rec.centery
+        start.x = self.start_rec.centerx
+        start.y = self.start_rec.centery
+        points.append(start)
+
+        if self.solved_path.poses:
+            print "have waypoint"
+            for pose in self.solved_path.poses:
+                pt = Point()
+
+                pt.x = (pose.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+                pt.y = (pose.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+                print pt
+                points.append(pt)
+
+        points.append(goal)
+
+        return points
+
+
+
 
 if __name__ == "__main__":
 
-    #pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
-    pygame.init()
-
-    # Run the main loop
-    my_game = GameManager()
-    my_game.start()
-    # Exit the game if the main loop ends
-    pygame.quit()
+   game = WhackAMole()
+   while not rospy.is_shutdown():
+       rospy.spin()

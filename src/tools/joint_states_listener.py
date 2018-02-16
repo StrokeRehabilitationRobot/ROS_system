@@ -41,11 +41,9 @@ class LatestJointStates:
     #callback function: when a joint_states message arrives, save the values
     def joint_states_callback(self, msg):
         self.lock.acquire()
-        rospy.loginfo("messages received!\n")
+        #rospy.loginfo("messages received!\n")
         self.name = msg.name
         self.position_queue.append(msg.position)
-        if msg.position == [0,0,0]:
-            print("Zero position message recieved")
         self.position = np.sum(self.position_queue, 0)/len(self.position_queue)
         #self.position = msg.position
         self.velocity = msg.velocity
