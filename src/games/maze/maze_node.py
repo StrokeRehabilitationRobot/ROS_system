@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import rospy
 import maze_helper
 import mazeBank
@@ -25,7 +26,7 @@ def make_maze(maze):
 if __name__ == '__main__':
 
     rospy.init_node("maze_launch")
-    my_maze = mazeBank.getmaze("trainer12")
+    my_maze = mazeBank.getmaze("maze1")
     make_maze(my_maze)
 
     while not rospy.is_shutdown():

@@ -56,19 +56,20 @@ def check_cell(maze, pt):
     N = maze.info.width
     M = maze.info.height
 
-    if pt not in range(len(maze.data)):
-        return 1
+
     # If the cell in the maze array is a 1, the cell is a wall
-    elif maze.data[pt] == 1:
-        return 1
+    #if maze.data[pt] == 1:
+        #return 1
     # If the cell in the maze array is a 2, the cell is the starting position
-    elif maze.data[pt] == 2:
+    if maze.data[pt] == 2:
         return 2
         # If the cell in the maze array is a 2, the cell is the starting position
     elif maze.data[pt] == 3:
         return 3
-    else:
+    elif maze.data[pt] == 0:
         return 0
+    else:
+        return 1
 
 def getStart(maze):
     """
@@ -100,7 +101,10 @@ def index_to_cell(maze,x,y):
     :param y: y index of 2D array
     :return: index of 1D array
     """
-    return maze.info.width*y + x
+    if x < 0 or x >= maze.info.width or y < 0 or y >= maze.info.height:
+        return maze.data.index(1)
+    else:
+        return maze.info.width*y + x
 
 # def neighbors_euclidean(maze, loc_x, loc_y):
 #     neighbors = []
@@ -112,9 +116,15 @@ def index_to_cell(maze,x,y):
 #     return neighbors
 
 def neighbors_manhattan(maze,loc_x, loc_y):
+    print "x: ", loc_x, " y: ", loc_y
+    print "cell ID: ", check_cell(maze, index_to_cell(maze, loc_x, loc_y))
+    print len(maze.data)
+    print index_to_cell(maze, loc_x, loc_y)
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
+        #print "checking point: ", index_to_cell(maze, option[0], option[1])
+        #print "cell ID: ", check_cell(maze, index_to_cell(maze, option[0], option[1]))
         if check_cell(maze, index_to_cell(maze, option[0], option[1])) in (0, 2, 3):
             neighbors_out.append(option)
 

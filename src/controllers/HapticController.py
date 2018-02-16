@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose,Point, WrenchStamped
 import math
 class HapticController():
 
-    def __init__(self, k_obs, k_goal, d_obs, d_goal, goal_angle=math.pi/2 ):
+    def __init__(self, k_obs, k_goal, d_obs, d_goal, goal_angle=math.pi/3.0 ):
         """
         """
         #rospy.init_node("haptics",anonymous=True)
@@ -26,6 +26,7 @@ class HapticController():
         f_x = 0
 
         for goal_num, g in enumerate(goals):
+            #print "g",g
             d = math.sqrt( (g.x - player.x)**2 + (g.y - player.y)**2  )
             theta_gp = math.atan2( (g.y - player.y),(g.x - player.x) )
             if len(goals) == 1:
@@ -33,6 +34,8 @@ class HapticController():
                 f_y += round(F*math.sin(theta_gp),2)
                 f_x += round(F*math.cos(theta_gp),2)
             else:
+                if goal_num == 0:
+                    continue
                 theta_gg = math.atan2( (goals[goal_num].y - goals[goal_num - 1].y),(goals[goal_num].x - goals[goal_num - 1].x) )
                 if abs(theta_gg  - theta_gp) <= self.goal_angle:
                     F = self.k_goal * ( max(self.d_goal - d,0))
