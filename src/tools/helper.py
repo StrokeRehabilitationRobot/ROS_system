@@ -115,7 +115,8 @@ def call_return_joint_states():
         sys.exit(1)
     for (ind, joint_name) in enumerate(joint_names):
         if(not resp.found[ind]):
-            print "joint %s not found!"%joint_name
+            pass
+            #print "joint %s not found!"%joint_name
     return (resp.position, resp.velocity, resp.effort)
 
 def robot_to_game(x_range, y_range  ):

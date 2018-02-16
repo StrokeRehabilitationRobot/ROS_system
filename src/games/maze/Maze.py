@@ -62,8 +62,8 @@ class Maze:
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
         self.running = False
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
-        self.pub_goal   = rospy.Publisher('AtGoal', Bool, queue_size=1)
-        self.pub_start  = rospy.Publisher('AtStart', Bool, queue_size=1)
+        self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
+        self.pub_start  = rospy.Publisher('at_start', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
@@ -84,14 +84,8 @@ class Maze:
         self.N = self.maze.info.height  # number of rows
         self.M = self.maze.info.width  # number of columns
         self.maze_draw()
-
         self.player_draw()
-
-        #start_loc_pixels_x = (start[0] * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
-        #start_loc_pixels_y = (start[1] * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
         pygame.display.update()
-
-
 
     def update_GUI(self,msg):
         """
@@ -99,8 +93,10 @@ class Maze:
         :msg: not used
         :return:
         """
+        start = self.at_start()
+        goal  = self.at_goal()
 
-        if self.running:
+        if self.running and not goal:
             #AVQuestion could we speed this up by only drawing the blocks around the player's position?
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
@@ -108,8 +104,8 @@ class Maze:
             self.player_draw()
             pygame.display.update()
             #self.pub_player.publish(self.player)
-            #start = self.at_start()
-            #goal  = self.at_goal()
+            start = self.at_start()
+            goal  = self.at_goal()
 
     def maze_callback(self,msg):
         """
@@ -117,6 +113,7 @@ class Maze:
         :param msg: occupany grid message
         :return:
         """
+        
         self.maze = msg
         self.on_init()
 
@@ -129,10 +126,6 @@ class Maze:
         draws the player location
         :return:
         """
-        # (position, velocity, effort) = tools.helper.call_return_joint_states()
-        # # scales the input to the game
-        # EE_y = tools.helper.remap(position[0],-0.6,0.6,0,self.windowWidth )
-        # EE_x = tools.helper.remap(position[2],1.9,0.6,0,self.windowHeight )
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
@@ -142,14 +135,6 @@ class Maze:
         wall_centers = self.check_collision_adaptive()
         goal_centers = self.goal_adaptive()
         self.controller.make_force(player_center,wall_centers,goal_centers)
-        #[forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = np.add(wall_force,goal_force)
-        #self.check_collision(self.player)
-        #self.pub_forces.publish(forces)
-
-
-        # calls the joint state server
-        #(position, velocity, effort) = self.call_return_joint_states(joint_names)
-
         pygame.draw.rect(self.display_surf, WHITE,
                          (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
@@ -233,14 +218,17 @@ class Maze:
         state = Bool()
         state.data = abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
                     abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
-        self.pub_goal.publish(state)
+        if state.data:
+            self.pub_goal.publish(state)
+            self.running = False
+
+
         return state.data
 
 
     def check_collision_adaptive(self):
         walls = []
         centers = []
-
         player_x = math.floor(float(self.player_rec.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
         player_y = math.floor(float(self.player_rec.centery)/BLOCKSIZE_Y)
         for x in range(int(player_x) - 1, int(player_x) + 2):
