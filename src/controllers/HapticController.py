@@ -52,3 +52,9 @@ class HapticController():
 
         [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [ round(f_x,1), 0, -round(f_y, 1) ]
         self.pub.publish(forces)
+
+    def zero_force(self):
+        forces = WrenchStamped()
+        forces.header.frame_id = "master"
+        [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [ 0, 0, 0]
+        self.pub.publish(forces)

@@ -56,21 +56,28 @@ class Maze:
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         self.solved_path = Path()
         self.wall_force = [0, 0, 0]
+        self.running = False
+        self.am_i_at_goal = False
+        self.am_i_at_start = False
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
-        self.running = False
+
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('at_start', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
+        player_center = Point()
+        player_center.x = self.player_rec.centerx
+        player_center.y = self.player_rec.centery
         self.controller = controllers.HapticController.HapticController(0.01,0.001,d_obs,d_goal)
+        self.controller.zero_force()
 
         pygame.init()
-        print("Ready to host maze")
+
 
 
     def on_init(self):
@@ -80,12 +87,18 @@ class Maze:
         """
         self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
         self.running = True
+        self.am_i_at_goal = False
+        self.am_i_at_start = False
         pygame.display.set_caption('Travel from Blue Square to Red Square')
         self.N = self.maze.info.height  # number of rows
         self.M = self.maze.info.width  # number of columns
         self.maze_draw()
         self.player_draw()
         pygame.display.update()
+        player_center = Point()
+        player_center.x = self.player_rec.centerx
+        player_center.y = self.player_rec.centery
+        self.controller.zero_force()
 
     def update_GUI(self,msg):
         """
@@ -93,19 +106,22 @@ class Maze:
         :msg: not used
         :return:
         """
-        start = self.at_start()
-        goal  = self.at_goal()
+        print "at start:", self.am_i_at_start
+        print "at goal:", self.am_i_at_goal
 
-        if self.running and not goal:
+        if self.running:
             #AVQuestion could we speed this up by only drawing the blocks around the player's position?
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
             self.path_draw()
+            if self.am_i_at_start:
+                self.am_i_at_goal = self.at_goal()
+            else:
+                self.am_i_at_start = self.at_start()
             self.player_draw()
             pygame.display.update()
             #self.pub_player.publish(self.player)
-            start = self.at_start()
-            goal  = self.at_goal()
+
 
     def maze_callback(self,msg):
         """
@@ -113,7 +129,7 @@ class Maze:
         :param msg: occupany grid message
         :return:
         """
-        
+
         self.maze = msg
         self.on_init()
 
@@ -126,6 +142,8 @@ class Maze:
         draws the player location
         :return:
         """
+        # start = self.at_start()
+        # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
@@ -134,7 +152,9 @@ class Maze:
         player_center.y = self.player_rec.centery
         wall_centers = self.check_collision_adaptive()
         goal_centers = self.goal_adaptive()
-        self.controller.make_force(player_center,wall_centers,goal_centers)
+        if self.am_i_at_start:
+            print "outputting force"
+            self.controller.make_force(player_center,wall_centers,goal_centers)
         pygame.draw.rect(self.display_surf, WHITE,
                          (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
@@ -205,7 +225,7 @@ class Maze:
         state.data = abs(self.player.x - start_pixels[0]) < PLAYERSIZE_X and \
                      abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
 
-        self.pub_start.publish(state)
+        #self.pub_start.publish(state)
         return state.data
 
     def at_goal(self):
@@ -221,7 +241,6 @@ class Maze:
         if state.data:
             self.pub_goal.publish(state)
             self.running = False
-
 
         return state.data
 

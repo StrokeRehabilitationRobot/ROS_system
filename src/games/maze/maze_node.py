@@ -12,10 +12,9 @@ maze_pub = rospy.Publisher('gen_maze', OccupancyGrid, queue_size=1, latch=True)
 
 
 def make_maze(msg):
-
     maze_names = [ "maze1","trainer12"]
     rand = np.random.randint(0, len(maze_names))
-    
+
     maze = mazeBank.getmaze(maze_names[rand])
 
     row = len(maze)
