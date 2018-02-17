@@ -59,6 +59,8 @@ class Maze:
         self.running = False
         self.am_i_at_goal = False
         self.am_i_at_start = False
+        self.time0 = 0
+        self.pose_old = (0,0)
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
@@ -98,6 +100,7 @@ class Maze:
         player_center = Point()
         player_center.x = self.player_rec.centerx
         player_center.y = self.player_rec.centery
+        self.pose_old = (player_center.x,player_center.y)
         self.controller.zero_force()
 
     def update_GUI(self,msg):
@@ -146,6 +149,8 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
+        vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.clock() - self.time0)
+        self.time0 = self.clock()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player_rec.centerx

@@ -17,7 +17,7 @@ class HapticController():
         self.d_goal = d_goal
         self.goal_angle = goal_angle
 
-    def make_force(self,player, obstacles=[],goals=[]):
+    def make_force(self,player, vel, obstacles=[],goals=[]):
 
         forces = WrenchStamped()
         forces.header.frame_id = "master"
@@ -30,7 +30,7 @@ class HapticController():
             d = math.sqrt( (g.x - player.x)**2 + (g.y - player.y)**2  )
             theta_gp = math.atan2( (g.y - player.y),(g.x - player.x) )
             if len(goals) == 1:
-                F = self.k_goal * ( max(self.d_goal - d,0))
+                F = self.k_goal * ( max(self.d_goal - d,0)) + 0.01 * ( max(v - d,0)) 
                 f_y += round(F*math.sin(theta_gp),2)
                 f_x += round(F*math.cos(theta_gp),2)
             else:
