@@ -16,7 +16,8 @@ import tf
 import tools.joint_states_listener
 import tools.helper
 import controllers.HapticController
-
+from operator import sub
+import time
 
 # Colors for use throughout
 RED = (255,0,0)
@@ -149,8 +150,13 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.clock() - self.time0)
-        self.time0 = self.clock()
+        # #vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.time - self.time0)
+        # vel = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
+        # self.pose_old =(self.player.x, self.player.y)
+        # t =  (time.time() - self.time0)
+        # vel = tuple([x/t for x in vel])
+        # print "vel",vel
+        # self.time0 = time.time()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player_rec.centerx
