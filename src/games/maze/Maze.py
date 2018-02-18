@@ -75,7 +75,7 @@ class Maze:
         player_center = Point()
         player_center.x = self.player_rec.centerx
         player_center.y = self.player_rec.centery
-        self.controller = controllers.HapticController.HapticController(0.01,0.001,d_obs,d_goal)
+        self.controller = controllers.HapticController.HapticController(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
         self.controller.zero_force()
 
         pygame.init()
@@ -149,13 +149,7 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        #vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.time - self.time0)
-        # vel = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
-        # self.pose_old =(self.player.x, self.player.y)
-        # t =  (time.time() - self.time0)
-        # vel = tuple([x/t for x in vel])
-        # print "vel",vel
-        # self.time0 = time.time()
+        v = get_velocity()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player_rec.centerx
@@ -164,10 +158,17 @@ class Maze:
         goal_centers = self.goal_adaptive()
         if self.am_i_at_start:
             print "outputting force"
-            self.controller.make_force(player_center,wall_centers,goal_centers)
+            self.controller.make_force(player_center,v,wall_centers,goal_centers)
         pygame.draw.rect(self.display_surf, WHITE,
                          (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
+    def get_velocity():
+        dt = (time.time() - self.time0)
+        v = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
+        self.pose_old =(self.player.x, self.player.y)
+        v = tuple([x/dt for x in v])
+        self.time0 = time.time()
+        return v
 
     def maze_draw(self):
         """
