@@ -16,16 +16,6 @@ BLACK = (0,0,0)
 PINK = (255,200,200)
 PURPLE = (255,150,255)
 
-# Map element sizes
-BLOCKSIZE_X = 50
-BLOCKSIZE_Y = 50
-PLAYERSIZE_X = 20
-PLAYERSIZE_Y = 20
-
-# Translating arm motion to map
-THRESHOLD = 0.05
-Y_CUTOFF = 0.35
-
 
 def invert(self):
     for index, row in enumerate(self.maze):

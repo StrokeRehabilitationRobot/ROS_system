@@ -1,7 +1,9 @@
 import pygame
 from pygame.locals import *
+import sys
 import games.maze.Maze as Maze
 import maze_helper
+
 import math
 import mazeBank
 import Player
