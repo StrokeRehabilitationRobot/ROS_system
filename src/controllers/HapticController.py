@@ -44,6 +44,7 @@ class HapticController():
 
 
         for obs in obstacles:
+
             d = math.sqrt( (obs.x - player.x)**2 + (obs.y - player.y)**2  )
             theta = math.atan2( (obs.y - player.y),(obs.x - player.x) )
             F = self.k_obs * ( max(self.d_obs - d,0))

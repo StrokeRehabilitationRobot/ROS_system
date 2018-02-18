@@ -66,7 +66,6 @@ class Maze:
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
-
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('at_start', Bool, queue_size=1)
@@ -150,7 +149,7 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        # #vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.time - self.time0)
+        #vel = ( (self.player.x, self.player.y) - self.pose_old  )/ (self.time - self.time0)
         # vel = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
         # self.pose_old =(self.player.x, self.player.y)
         # t =  (time.time() - self.time0)
