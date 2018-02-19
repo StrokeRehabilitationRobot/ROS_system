@@ -16,6 +16,7 @@ import tf
 import tools.joint_states_listener
 import tools.helper
 import controllers.HapticController
+import EnviromentDynamics
 from operator import sub
 import time
 
@@ -75,7 +76,7 @@ class Maze:
         player_center = Point()
         player_center.x = self.player_rec.centerx
         player_center.y = self.player_rec.centery
-        self.controller = controllers.HapticController.HapticController(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
+        self.controller = EnviromentDynamics.EnviromentDynamics(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
         self.controller.zero_force()
 
         pygame.init()
@@ -149,7 +150,7 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        v = get_velocity()
+        v = self.get_velocity()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player_rec.centerx
@@ -162,7 +163,7 @@ class Maze:
         pygame.draw.rect(self.display_surf, WHITE,
                          (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
-    def get_velocity():
+    def get_velocity(self):
         dt = (time.time() - self.time0)
         v = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
         self.pose_old =(self.player.x, self.player.y)
