@@ -17,7 +17,9 @@ import tf
 import tools.joint_states_listener
 import tools.helper
 import controllers.HapticController
-
+import EnviromentDynamics
+from operator import sub
+import time
 
 # Colors for use throughout
 RED = (255,0,0)
@@ -67,7 +69,9 @@ class Maze:
 
         self.running = False
         self.am_i_at_goal = False
-        self.am_i_at_start = False
+        self.am_i_at_start = Falser
+        self.time0 = 0
+        self.pose_old = (0,0)
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
@@ -80,7 +84,11 @@ class Maze:
 
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
-        self.controller = controllers.HapticController.HapticController(0.01,0.001,d_obs,d_goal)
+
+        player_center = Point()
+        player_center.x = self.player_rec.centerx
+        player_center.y = self.player_rec.centery
+        self.controller = EnviromentDynamics.EnviromentDynamics(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
         self.controller.zero_force()
 
         pygame.init()
@@ -107,6 +115,11 @@ class Maze:
         self.maze_draw()
         self.player_draw()
         pygame.display.update()
+
+        player_center = Point()
+        player_center.x = self.player_rec.centerx
+        player_center.y = self.player_rec.centery
+        self.pose_old = (player_center.x,player_center.y)
         self.controller.zero_force()
 
     def update_GUI(self,msg):
@@ -160,6 +173,7 @@ class Maze:
         # goal  = self.at_goal()
 
         (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
+        v = self.get_velocity()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         # AV_TODO: can use player_center = player_rec.center?
         player_center = Point()
@@ -169,13 +183,21 @@ class Maze:
         goal_centers = self.goal_adaptive()
 
         if self.am_i_at_start:
+
             self.update_score()
             print "Score:", self.score
-            self.controller.make_force(player_center,wall_centers,goal_centers)
+            self.controller.make_force(player_center,v,wall_centers,goal_centers)
 
         pygame.draw.rect(self.display_surf, WHITE,
                          (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
 
+    def get_velocity(self):
+        dt = (time.time() - self.time0)
+        v = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
+        self.pose_old =(self.player.x, self.player.y)
+        v = tuple([x/dt for x in v])
+        self.time0 = time.time()
+        return v
 
     def maze_draw(self):
         """

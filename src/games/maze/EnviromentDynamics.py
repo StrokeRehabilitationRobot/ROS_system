@@ -4,7 +4,7 @@ import rospy
 from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 import math
-class HapticController():
+class EnviromentDynamics():
 
     def __init__(self, k_obs, k_goal, b_obs,b_goal, d_obs, d_goal, goal_angle=math.pi/3.0 ):
         """

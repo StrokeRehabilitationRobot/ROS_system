@@ -29,8 +29,8 @@ def udp_callback(downstream):
 
     for i in xrange(3):
         q.append( -round(tools.helper.encoder_to_angle(upstream[i * 3 + 0 + 1]), 2))
-        qd.append(round(tools.helper.encoder_to_angle(upstream[i * 3 + 2 + 1]), 2))
-        tau.append(tools.helper.filter_tau(upstream[i * 3 + 2 + 1], i))
+        qd.append(round(tools.helper.encoder_to_angle(upstream[i * 3 + 1 + 1]), 2))
+        tau.append(upstream[i * 3 + 2 + 1])
 
     q[2]+=0.5*math.pi
 
