@@ -98,6 +98,8 @@ class Maze:
         self.am_i_at_goal = False
         self.am_i_at_start = False
         self.score = 0
+        self.starts = []
+        self.goals = []
         self.game_timer = time.time()
         pygame.display.set_caption('Travel from Blue Square to Red Square')
         self.N = self.maze.info.height  # number of rows
@@ -121,13 +123,17 @@ class Maze:
             self.path_draw()
             if self.am_i_at_start:
                 self.am_i_at_goal = self.at_goal()
+                elapsed_time = time.time() - self.game_timer
             else:
                 self.am_i_at_start = self.at_start()
+                elapsed_time = 0
+
             self.player_draw()
-            scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, time.time() - self.game_timer)
+            scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, elapsed_time)
             textsurface = self.myfont.render(scoretext, False, WHITE)
-            pygame.display.update()
             self.display_surf.blit(textsurface, (0,0))
+            pygame.display.update()
+
             #self.pub_player.publish(self.player)
 
 
@@ -161,8 +167,10 @@ class Maze:
         player_center.y = self.player_rec.centery
         wall_centers = self.check_collision_adaptive()
         goal_centers = self.goal_adaptive()
-        self.update_score()
+
         if self.am_i_at_start:
+            self.update_score()
+            print "Score:", self.score
             self.controller.make_force(player_center,wall_centers,goal_centers)
 
         pygame.draw.rect(self.display_surf, WHITE,
@@ -185,17 +193,19 @@ class Maze:
                 #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
 
             elif cell == 2:
-                pygame.draw.rect(self.display_surf, BLUE,
-                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                #pygame.draw.rect(self.display_surf, BLUE,
+                                 #(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
                 self.starts.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-                self.start_rec = pygame.rect.unionall(self.starts)
+                self.start_rec = self.starts[0].unionall(self.starts)
+                #print "Start Rectangle", self.start_rec
+                pygame.draw.rect(self.display_surf, BLUE, self.start_rec, 0)
 
             elif cell == 3:
-                pygame.draw.rect(self.display_surf, RED,
-                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
+                #pygame.draw.rect(self.display_surf, RED,
+                                 #(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
                 self.goals.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-                self.goal_rec = pygame.rect.unionall(self.goals)
-
+                self.goal_rec = self.goals[0].unionall(self.goals)
+                pygame.draw.rect(self.display_surf, RED, self.goal_rec, 0)
 
 
 
@@ -236,8 +246,10 @@ class Maze:
                      abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
         """
         state = Bool()
-        state.data = self.goal_rec.contains(self.player_rec)
-
+        state.data = self.start_rec.contains(self.player_rec)
+        if state.data:
+            
+            self.game_timer = time.time()
         #self.pub_start.publish(state)
         return state.data
 
@@ -270,7 +282,8 @@ class Maze:
                 point_index = maze_helper.index_to_cell(self.maze, x, y)
                 neighbors = maze_helper.neighbors_manhattan(self.maze, x,y)
                 #goal = maze_helper.getGoal(self.maze)
-                if maze_helper.check_cell(self.maze, int(point_index)) == 1 and not (self.goals | neighbors):
+                near_goal = [block for block in self.goals if block in neighbors]
+                if maze_helper.check_cell(self.maze, int(point_index)) == 1 and not near_goal:
                     point = Point()
                     wall_block = pygame.Rect((x * BLOCKSIZE_X, y * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
                     point.x = wall_block.centerx
@@ -314,8 +327,12 @@ class Maze:
             self.score -= 1
         for pose in self.solved_path.poses:
             if pose.pose.position.x == player_x and pose.pose.position.y == player_y:
-                reward = math.floor(1./len(self.solved_path) * 50)
+                #print "On track"
+                reward = math.floor(1./len(self.solved_path.poses) * 100)
                 self.score += reward
+            # else:
+            #     print "Player (x,y):", player_x, player_y
+            #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ def a_star(maze):
 
     while not frontier.empty():
         current = frontier.get()
-        
+
         for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
             new_cost = cost_so_far[current] + costmove(maze, current, next, came_from[current])
             if next not in cost_so_far or new_cost < cost_so_far[next]:
@@ -102,10 +102,10 @@ def costmove(maze, current, next, prev):
     elif (next[0] == current[0] and current[0] == prev[0]) or (next[1] == current[1] and current[1] == prev[1]):
         cost += 1
     else:
-        cost += 3
+        cost += 5
 
-    num_neighbors = maze_helper.neighbors_manhattan(maze, next[0], next[1])
-    cost = cost + 4 - num_neighbors # add cost for every wall neighbor
+    num_neighbors = len(maze_helper.neighbors_manhattan(maze, next[0], next[1]))
+    cost = cost + 16 - (4*num_neighbors) # add cost for every wall neighbor
 
     return cost
 def break_into_lean_segments(my_path):
@@ -136,12 +136,13 @@ def get_attractor_list(segments, assistance):
         if len(segment) <=2:
             continue
         elif segment[0].pose.position.x != segment[2].pose.position.x and segment[0].pose.position.y != segment[2].pose.position.y:
-            attractors.append(segment[0])
-            attractors.append(segment[2])
+            attractors.poses.append(segment[0])
+            attractors.poses.append(segment[2])
         else:
-            step_size = max(math.floor(float(len(segment)/assistance)), 1)
-            attractors.extend(segment[::step_size])
+            step_size = int(max(math.floor(float(len(segment)/assistance)), 1))
+            attractors.poses.extend(segment[::step_size])
 
+    return attractors
 
 
 def heuristic(a, b):
@@ -165,7 +166,7 @@ def solve_into_segments(maze):
     path_pub = rospy.Publisher("a_star", Path, queue_size=1,latch=True)
     solution = a_star(maze) # returns the path of the complete solution
     segments = break_into_segments(solution) # returns a list of paths, where each path is a straight or turn
-    attractors = get_attractor_list(segments, assistance=3) # turn list of paths into one list of points representing solution
+    attractors = get_attractor_list(segments, assistance=1) # turn list of paths into one list of points representing solution
     lean_segments = break_into_lean_segments(solution) # returns a path of waypoints
     path_pub.publish(attractors)
     #path_pub.publish(lean_segments)
