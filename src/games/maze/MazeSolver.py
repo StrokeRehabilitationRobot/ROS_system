@@ -30,9 +30,9 @@ def a_star(maze):
 
     while not frontier.empty():
         current = frontier.get()
-        
+
         for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
-            new_cost = cost_so_far[current] + costmove(current, next, came_from[current])
+            new_cost = cost_so_far[current] + costmove(maze, current, next, came_from[current])
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 cost_so_far[next] = new_cost
                 priority = new_cost + heuristic(goal, next)
@@ -79,10 +79,7 @@ def break_into_segments(my_path):
              #% (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
                 #next.pose.position.x, next.pose.position.y)
 
-        if (prev is None) or (next is None):
-            #print("end-bit")
-            segments[segment_i].append(step)
-        elif (next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
+        if (next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
                 or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y):
             #print("straight")
             segments[segment_i].append(step)
@@ -98,14 +95,19 @@ def break_into_segments(my_path):
             segment_i += 1
     return segments
 
-def costmove(current, next, prev):
+def costmove(maze, current, next, prev):
+    cost = 0
     if (prev is None) or (next is None):
-        return 1
+        cost += 1
     elif (next[0] == current[0] and current[0] == prev[0]) or (next[1] == current[1] and current[1] == prev[1]):
-        return 1
+        cost += 1
     else:
-        return 5
+        cost += 5
 
+    num_neighbors = len(maze_helper.neighbors_manhattan(maze, next[0], next[1]))
+    cost = cost + 16 - (4*num_neighbors) # add cost for every wall neighbor
+
+    return cost
 def break_into_lean_segments(my_path):
     # Break path into segments
     segments = Path()
@@ -127,6 +129,20 @@ def break_into_lean_segments(my_path):
             segments.poses.append(next)
 
     return segments
+
+def get_attractor_list(segments, assistance):
+    attractors = Path()
+    for segment in segments:
+        if len(segment) <=2:
+            continue
+        elif segment[0].pose.position.x != segment[2].pose.position.x and segment[0].pose.position.y != segment[2].pose.position.y:
+            attractors.poses.append(segment[0])
+            attractors.poses.append(segment[2])
+        else:
+            step_size = int(max(math.floor(float(len(segment)/assistance)), 1))
+            attractors.poses.extend(segment[::step_size])
+
+    return attractors
 
 
 def heuristic(a, b):
@@ -150,9 +166,10 @@ def solve_into_segments(maze):
     path_pub = rospy.Publisher("a_star", Path, queue_size=1,latch=True)
     solution = a_star(maze) # returns the path of the complete solution
     segments = break_into_segments(solution) # returns a list of paths, where each path is a straight or turn
-    lean_segments = break_into_lean_segments(solution) # returns a list of paths with fewer steps
-    path_pub.publish(lean_segments)
-    path_pub.publish(lean_segments)
+    attractors = get_attractor_list(segments, assistance=1) # turn list of paths into one list of points representing solution
+    lean_segments = break_into_lean_segments(solution) # returns a path of waypoints
+    path_pub.publish(attractors)
+    #path_pub.publish(lean_segments)
 
 if __name__ == "__main__":
     rospy.init_node('MazeSolver', anonymous=True)

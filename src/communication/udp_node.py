@@ -107,6 +107,10 @@ def udp_server():
     rospy.Subscriber("motors_server", WrenchStamped, motor_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
     rospy.Timer(rospy.Duration(0.001), status_callback)
+    forces = WrenchStamped()
+    forces.header.frame_id = "master"
+    [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [0,0,0]
+    motor_callback(forces)
     #udp = UDP.UDP(9876)
     rospy.spin()
 

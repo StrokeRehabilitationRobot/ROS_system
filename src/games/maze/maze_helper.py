@@ -16,16 +16,6 @@ BLACK = (0,0,0)
 PINK = (255,200,200)
 PURPLE = (255,150,255)
 
-# Map element sizes
-BLOCKSIZE_X = 50
-BLOCKSIZE_Y = 50
-PLAYERSIZE_X = 20
-PLAYERSIZE_Y = 20
-
-# Translating arm motion to map
-THRESHOLD = 0.05
-Y_CUTOFF = 0.35
-
 
 def invert(self):
     for index, row in enumerate(self.maze):
@@ -116,10 +106,7 @@ def index_to_cell(maze,x,y):
 #     return neighbors
 
 def neighbors_manhattan(maze,loc_x, loc_y):
-    print "x: ", loc_x, " y: ", loc_y
-    print "cell ID: ", check_cell(maze, index_to_cell(maze, loc_x, loc_y))
-    print len(maze.data)
-    print index_to_cell(maze, loc_x, loc_y)
+
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
