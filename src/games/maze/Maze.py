@@ -69,7 +69,7 @@ class Maze:
 
         self.running = False
         self.am_i_at_goal = False
-        self.am_i_at_start = Falser
+        self.am_i_at_start = False
         self.time0 = 0
         self.pose_old = (0,0)
 
@@ -119,6 +119,7 @@ class Maze:
         player_center = Point()
         player_center.x = self.player_rec.centerx
         player_center.y = self.player_rec.centery
+
         self.pose_old = (player_center.x,player_center.y)
         self.controller.zero_force()
 
@@ -146,6 +147,7 @@ class Maze:
             textsurface = self.myfont.render(scoretext, False, WHITE)
             self.display_surf.blit(textsurface, (0,0))
             pygame.display.update()
+
 
             #self.pub_player.publish(self.player)
 
@@ -270,7 +272,7 @@ class Maze:
         state = Bool()
         state.data = self.start_rec.contains(self.player_rec)
         if state.data:
-            
+
             self.game_timer = time.time()
         #self.pub_start.publish(state)
         return state.data
