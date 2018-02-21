@@ -42,7 +42,8 @@ class Maze:
         self.goals = []
         self.goal_rec = None
         self.start_rec = None
-
+        self.x_avg = []
+        self.y_avg = []
         self.player = Rect((self.windowWidth*0.5, self.windowHeight*0.5, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
 
         self.solved_path = []
@@ -59,23 +60,29 @@ class Maze:
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
-        threading.Thread(target=self.update_player).start()
-        #threading.Thread(target=self.update_GUI).start()
-        # threading.Thread(target=self.update_force).start()
-        rospy.Timer(rospy.Duration(0.1), self.update_GUI)
+
         # rospy.Timer(rospy.Duration(0.01), self.update_player)
         # rospy.Timer(rospy.Duration(0.01), self.update_force)
         self.odom_list = tf.TransformListener()
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
-        self.pub_forces = rospy.Publisher("haptic", hapticForce, queue_size=1)
+        self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
 
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X
         d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + maze_helper.BLOCKSIZE_X
 
         self.controller = EnviromentDynamics.EnviromentDynamics(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
         self.controller.zero_force()
+
+        player_thread = threading.Thread(target=self.update_player)
+        player_thread.daemon = True
+        player_thread.start()
+        #threading.Thread(target=self.update_GUI).start()
+        force_thread = threading.Thread(target=self.update_force)
+        force_thread.daemon = True
+        force_thread.start()
+        rospy.Timer(rospy.Duration(0.1), self.update_GUI)
 
         pygame.init()
         pygame.font.init()
@@ -102,37 +109,50 @@ class Maze:
         self.maze_draw()
         self.player_draw()
         pygame.display.update()
-
         self.pose_old = self.player
-        self.controller.zero_force()
+
 
     """
         Updaters, called on timmer callbacks
     """
 
     def update_player(self):
+
         while 1:
-            (x, y) =  maze_helper.joint_to_game( (0,self.windowWidth), (0,self.windowHeight) )
+
+            (x_temp, y_temp) =  maze_helper.joint_to_game( (0,self.windowWidth), (0,self.windowHeight) )
+            if len(self.x_avg) > 3:
+                self.x_avg.pop(0)
+                self.y_avg.pop(0)
+            self.x_avg.append(x_temp)
+            self.y_avg.append(y_temp)
+            x = sum(self.x_avg)/float(len(self.x_avg))
+            y = sum(self.y_avg)/float(len(self.y_avg))
             v = 0#self.get_velocity()
             self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
-
             time.sleep(0.01)
 
 
-    def update_force(self,msg):
+    def update_force(self):
 
-        pass
-        # if self.running:
-        #     player_center = Point()
-        #     player_center.x = self.player.centerx
-        #     player_center.y = self.player.centery
-        #     centers,walls = maze_helper.check_collision_adaptive(self.player,self.maze)
-        #     for wall_block in walls:
-        #         pygame.draw.rect(self.display_surf, maze_helper.GREEN , wall_block, 0)
-        #
-        #     #goal_centers = maze_helper.goal_adaptive(self.start_rec,self.goal_rec,self.path_draw)
-        #     pygame.display.update()
-        #time.pause(0.01)
+        while 1:
+            msg = hapticForce()
+            if self.running:
+
+                player_center = Point()
+                player_center.x = self.player.centerx
+                player_center.y = self.player.centery
+                centers, walls = maze_helper.check_collision_adaptive(self.player,self.maze)
+
+                for wall_block in walls:
+                    pygame.draw.rect(self.display_surf, maze_helper.GREEN , wall_block, 0)
+                msg.player = player_center
+                msg.obstacles = centers
+                msg.goals = []
+                self.pub_enviroment.publish(msg)
+                #goal_centers = maze_helper.goal_adaptive(self.start_rec,self.goal_rec,self.path_draw)
+                pygame.display.update()
+            time.sleep(0.01)
 
     def update_GUI(self,msg):
         """
@@ -140,7 +160,6 @@ class Maze:
         :msg: not used
         :return:
         """
-
 
         if self.running:
             #AVQuestion could we speed this up by only drawing the blocks around the player's position?
@@ -179,11 +198,9 @@ class Maze:
             cell = maze_helper.check_cell(self.maze,index)
             if cell == 1:
                 self.walls.append(pygame.Rect(bx * maze_helper.BLOCKSIZE_X, by * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
-
             elif cell == 2:
                 self.starts.append(pygame.Rect(bx * maze_helper.BLOCKSIZE_X, by * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
                 self.start_rec = self.starts[0].unionall(self.starts)
-
             elif cell == 3:
                 self.goals.append(pygame.Rect(bx * maze_helper.BLOCKSIZE_X, by * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
                 self.goal_rec = self.goals[0].unionall(self.goals)

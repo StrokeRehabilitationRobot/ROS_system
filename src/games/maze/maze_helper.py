@@ -6,7 +6,9 @@ from strokeRehabSystem.srv import ReturnJointStates
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 from std_msgs.msg import Bool
 import rospy
+import pygame
 import time
+import math
 import tf
 import tools.joint_states_listener
 import tools.helper
@@ -138,43 +140,44 @@ def task_to_game(x_range, y_range):
 
     return (EE_y,EE_x)
 
-def neighbors_manhattan(maze,loc_x, loc_y):
+def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
 
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
         #print "checking point: ", index_to_cell(maze, option[0], option[1])
         #print "cell ID: ", check_cell(maze, index_to_cell(maze, option[0], option[1]))
-        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in (0, 2, 3):
+        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
             neighbors_out.append(option)
 
     return neighbors_out
 
 
 
-def check_collision_adaptive(self,player,maze):
+def check_collision_adaptive(player,maze):
+
     walls = []
     centers = []
-
-    player_x = math.floor(float(player.centerx)/maze_helper.BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
-    player_y = math.floor(float(player.centery)/maze_helper.BLOCKSIZE_Y)
-    for x in range(int(player_x) - 1, int(player_x) + 2):
-        for y in range(int(player_y) - 1, int(player_y) + 2):
-            point_index = maze_helper.index_to_cell(self.maze, x, y)
-            neighbors = maze_helper.neighbors_manhattan(maze, x,y)
-            #goal = maze_helper.getGoal(self.maze)
-            if maze_helper.check_cell(self.maze, int(point_index)) == 1 and not near_goal:
-                point = Point()
-                wall_block = pygame.Rect((x * maze_helper.BLOCKSIZE_X, y * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
-                point.x = wall_block.centerx
-                point.y = wall_block.centery
-                centers.append(point)
-                walls.append(wall_block)
+    player_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+    player_y = int(float(player.centery)/BLOCKSIZE_Y)
+    neighbor_walls = neighbors_manhattan(maze, player_x,player_y, [1])
+    for neighbor in neighbor_walls:
+        point = Point()
+        wall_block = pygame.Rect((neighbor[0] * BLOCKSIZE_X, neighbor[1] * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+        point.x = wall_block.centerx
+        point.y = wall_block.centery
+        centers.append(point)
+        walls.append(wall_block)
+    ##TODO: Delete these lines to have more than one wall at a time
+    if len(walls) > 0:
+        index_to_keep = len(walls)/2 # Should be int 0, 1, or 2
+        walls = [walls[index_to_keep]]
+    #######
 
     return centers,walls
 
 
-def goal_adaptive(self,start,goal,path):
+def goal_adaptive(start,goal,path):
 
     points = []
     goal = maze_helper.rec_to_point(goal)

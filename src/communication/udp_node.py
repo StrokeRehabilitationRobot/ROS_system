@@ -34,7 +34,7 @@ def udp_callback(downstream):
 
     q[2]+=0.5*math.pi
 
-    state.position = q
+    state.position = [0.1,0.1,0.1]
     state.velocity = qd
     state.effort = tau
     robot_state.publish(state)
@@ -97,7 +97,7 @@ def udp_server():
     rospy.init_node('udp_server')
     rospy.Subscriber("udp", udpMessage, udp_callback)
     rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
-    rospy.Subscriber("motors_server", Vector3Stamped, motors_callback)
+    #rospy.Subscriber("motors_server", Vector3Stamped, motors_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
     rospy.Timer(rospy.Duration(0.001), status_callback)
     forces = WrenchStamped()
