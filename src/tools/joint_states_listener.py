@@ -15,7 +15,7 @@ from collections import deque
 class LatestJointStates:
 
     def __init__(self):
-        queue_size = 5
+        queue_size = 10
         rospy.init_node('joint_states_listener')
         self.lock = threading.Lock()
 
@@ -100,7 +100,7 @@ class LatestJointStates:
             positions.append(position)
             velocities.append(velocity)
             efforts.append(effort)
-        return ReturnJointStatesResponse(joints_found, positions, velocities, efforts)
+        return ReturnJointStatesResponse(joints_found, positions , velocities, efforts)
 
 
 #run the server

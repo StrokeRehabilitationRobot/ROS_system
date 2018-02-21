@@ -34,7 +34,7 @@ def udp_callback(downstream):
 
     q[2]+=0.5*math.pi
 
-    state.position = [0.1,0.1,0.1]
+    state.position = q
     state.velocity = qd
     state.effort = tau
     robot_state.publish(state)

@@ -7,7 +7,7 @@ import maze_helper
 import math
 import mazeBank
 import threading
-
+from sensor_msgs.msg import JointState
 import numpy as np
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
@@ -56,11 +56,12 @@ class Maze:
         self.am_i_at_start = False
         self.time0 = 0
         self.pose_old = (0,0)
+        self.csv = open("/home/cibr-strokerehab/Documents/JointStatesRecording.csv", "w")
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
-
+        #rospy.Subscriber('joint_states', JointState, self.update_player)
         # rospy.Timer(rospy.Duration(0.01), self.update_player)
         # rospy.Timer(rospy.Duration(0.01), self.update_force)
         self.odom_list = tf.TransformListener()
@@ -119,15 +120,7 @@ class Maze:
     def update_player(self):
 
         while 1:
-
-            (x_temp, y_temp) =  maze_helper.joint_to_game( (0,self.windowWidth), (0,self.windowHeight) )
-            if len(self.x_avg) > 3:
-                self.x_avg.pop(0)
-                self.y_avg.pop(0)
-            self.x_avg.append(x_temp)
-            self.y_avg.append(y_temp)
-            x = sum(self.x_avg)/float(len(self.x_avg))
-            y = sum(self.y_avg)/float(len(self.y_avg))
+            (x, y) =  maze_helper.task_to_game( (0,self.windowWidth), (0,self.windowHeight) )
             v = 0#self.get_velocity()
             self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
             time.sleep(0.01)
@@ -298,7 +291,7 @@ class Maze:
         return state.data
 
     #
-    # def update_score(self, assistance=3):
+    def update_score(self, assistance=3): pass
     #
     #     player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
     #     player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)

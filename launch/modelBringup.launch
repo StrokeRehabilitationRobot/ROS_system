@@ -11,7 +11,7 @@
   <param name="robot_description" command="$(find xacro)/xacro.py $(find strokeRehabSystem)/urdf/strokearm.urdf.xacro" />
   <param name="use_gui" value="$(arg gui)"/>
 
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+  <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /> -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
   <node pkg="strokeRehabSystem" type="joint_states_listener.py" name="joint_state_listener" output="screen">
   </node>
