@@ -174,7 +174,7 @@ class Maze:
         # start = self.at_start()
         # goal  = self.at_goal()
 
-        (self.player.x, self.player.y) =  tools.helper.robot_to_game((0,self.windowWidth), (0,self.windowHeight)  )
+        (self.player.x, self.player.y) =  maze_helper.joint_to_game((0,self.windowWidth), (0,self.windowHeight)  )
         v = self.get_velocity()
         self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         # AV_TODO: can use player_center = player_rec.center?

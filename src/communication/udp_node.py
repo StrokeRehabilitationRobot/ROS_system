@@ -39,8 +39,6 @@ def udp_callback(downstream):
     state.effort = tau
     robot_state.publish(state)
 
-
-
 def torque_callback(force):
 
     print "hello"
@@ -111,6 +109,7 @@ def udp_server():
     forces.header.frame_id = "master"
     [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [0,0,0]
     motor_callback(forces)
+    #rospy.Rate(500)
     #udp = UDP.UDP(9876)
     rospy.spin()
 

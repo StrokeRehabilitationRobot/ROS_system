@@ -1,20 +1,16 @@
 #!/usr/bin/env python
 
-import pygame
-from pygame.locals import *
-import math
-import mazeBank
-import numpy
+import sys
+import numpy as np
+from strokeRehabSystem.srv import ReturnJointStates
+from geometry_msgs.msg import Pose,Point, WrenchStamped
+from std_msgs.msg import Bool
+import rospy
+import time
+import tf
+import tools.joint_states_listener
+import tools.helper
 
-# Colors for use throughout
-RED = (255,0,0)
-GREEN = (0,255,0)
-BLUE = (0,0,255)
-DARK_BLUE = (0,0,128)
-WHITE = (255,255,255)
-BLACK = (0,0,0)
-PINK = (255,200,200)
-PURPLE = (255,150,255)
 
 
 def invert(self):
@@ -96,14 +92,24 @@ def index_to_cell(maze,x,y):
     else:
         return maze.info.width*y + x
 
-# def neighbors_euclidean(maze, loc_x, loc_y):
-#     neighbors = []
-#     for x in range(loc_x - 1, loc_x + 2):
-#         for y in range(loc_y - 1, loc_y + 2):
-#             if check_cell(maze, index_to_cell(maze, x, y)) in (0, 2, 3):
-#                 neighbors.append((x, y))
-#
-#     return neighbors
+def joint_to_game(x_range, y_range  ):
+
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+    # scales the input to the game
+    EE_y = tools.helper.remap(round(position[0],5),-0.6,0.6,x_range[0],x_range[1] )
+    EE_x = tools.helper.remap(round(position[2],5),1.9,0.6,y_range[0],y_range[1])
+    #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
+    return (EE_y,EE_x)
+
+def task_to_game(odom_list,x_range, y_range):
+
+
+    odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
+    (position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+    EE_y = tools.helper.remap(position[1],-0.20,0.20,x_range[0],x_range[1] )
+    EE_x = tools.helper.remap(position[2],0.15,-0.15,y_range[0],y_range[1])
+
+    return (EE_y,EE_x)
 
 def neighbors_manhattan(maze,loc_x, loc_y):
 
