@@ -62,7 +62,7 @@ class Maze:
 
         self.player = Rect((self.windowWidth*0.5, self.windowHeight*0.5, PLAYERSIZE_X, PLAYERSIZE_Y) )
 
-        self.solved_path = Path()
+        self.solved_path = []
         self.score = 0
         self.wall_force = [0, 0, 0]
         self.game_timer = 0
@@ -231,7 +231,15 @@ class Maze:
         :return:
         """
 
-        self.solved_path = msg
+        path = []
+
+        for point in msg.poses:
+
+            pixels_x = (point.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+            pixels_y = (point.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+            path.append(pygame.Rect(pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y))
+
+        self.solved_path = path
 
 
     def path_draw(self):
@@ -239,25 +247,15 @@ class Maze:
         draws the path
         :return:
         """
-        for point in self.solved_path.poses:
 
-            pixels_x = (point.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
-            pixels_y = (point.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
-            pygame.draw.rect(self.display_surf, GREEN,
-                             (pixels_x, pixels_y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
-
+        for rect in self.solved_path:
+            pygame.draw.rect(self.display_surf, GREEN,rect, 0)
 
     def at_start(self):
         """
         checks if we are at the starting location
         :return: boolean check if we are at the starting location
 
-
-        start = maze_helper.getStart(self.maze)
-        start_pixels = (start[0] * BLOCKSIZE_X, start[1] * BLOCKSIZE_Y)
-        state = Bool()
-        state.data = abs(self.player.x - start_pixels[0]) < PLAYERSIZE_X and \
-                     abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
         """
         state = Bool()
         print self.player
@@ -276,7 +274,7 @@ class Maze:
         #goal = maze_helper.getGoal(self.maze)
         #goal_pixels = (self.goal_rec.x, self.goal_rec.y)#(goal[0] * BLOCKSIZE_X, goal[1] * BLOCKSIZE_Y)
         state = Bool()
-        state.data = self.goal_rec.contains(self.player_rec )#abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
+        state.data = self.goal_rec.contains(self.player)#abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
                     #abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
         if state.data:
             self.pub_goal.publish(state)
@@ -321,11 +319,11 @@ class Maze:
         start.y = self.start_rec.centery
         points.append(start)
 
-        if self.solved_path.poses:
-            for pose in self.solved_path.poses:
+        if self.solved_path:
+            for rec in self.solved_path:
                 pt = Point()
-                pt.x = (pose.pose.position.x * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
-                pt.y = (pose.pose.position.y * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+                pt.x = (rec.centerx * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+                pt.y = (rec.centery * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
                 print pt
                 points.append(pt)
 
