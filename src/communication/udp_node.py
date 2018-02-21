@@ -41,7 +41,6 @@ def udp_callback(downstream):
 
 def motors_callback(msg):
 
-
     if force.header.frame_id == "slave":
         board = 1
     else:
@@ -98,13 +97,13 @@ def udp_server():
     rospy.init_node('udp_server')
     rospy.Subscriber("udp", udpMessage, udp_callback)
     rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
-    rospy.Subscriber("motors_server", Vector3Stamped, motor_callback)
+    rospy.Subscriber("motors_server", Vector3Stamped, motors_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
     rospy.Timer(rospy.Duration(0.001), status_callback)
     forces = WrenchStamped()
     forces.header.frame_id = "master"
     [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [0,0,0]
-    motor_callback(forces)
+    torque_callback(forces)
     #rospy.Rate(500)
     #udp = UDP.UDP(9876)
     rospy.spin()

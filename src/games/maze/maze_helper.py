@@ -127,7 +127,7 @@ def joint_to_game(x_range, y_range  ):
     #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
     return (EE_y,EE_x)
 
-def task_to_game(odom_list,x_range, y_range):
+def task_to_game(x_range, y_range):
 
     #odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
     #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))

@@ -6,6 +6,8 @@ from pygame.locals import *
 import maze_helper
 import math
 import mazeBank
+import threading
+
 import numpy as np
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
@@ -57,9 +59,12 @@ class Maze:
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
+        threading.Thread(target=self.update_player).start()
+        #threading.Thread(target=self.update_GUI).start()
+        # threading.Thread(target=self.update_force).start()
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
-        rospy.Timer(rospy.Duration(0.01), self.update_player)
-        rospy.Timer(rospy.Duration(0.01), self.update_force)
+        # rospy.Timer(rospy.Duration(0.01), self.update_player)
+        # rospy.Timer(rospy.Duration(0.01), self.update_force)
         self.odom_list = tf.TransformListener()
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
@@ -75,7 +80,7 @@ class Maze:
         pygame.init()
         pygame.font.init()
 
-        self.myfont = pygame.font.SysFont('Comic Sans MS', 18)
+        # self.myfont = pygame.font.SysFont('Comic Sans MS', 18)
 
 
     def on_init(self):
@@ -105,12 +110,17 @@ class Maze:
         Updaters, called on timmer callbacks
     """
 
-    def update_player(self,msg):
-        (x, y) =  maze_helper.task_to_game( self.odom_list, (0,self.windowWidth), (0,self.windowHeight) )
-        v = 0#self.get_velocity()
-        self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+    def update_player(self):
+        while 1:
+            (x, y) =  maze_helper.joint_to_game( (0,self.windowWidth), (0,self.windowHeight) )
+            v = 0#self.get_velocity()
+            self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+
+            time.sleep(0.01)
+
 
     def update_force(self,msg):
+
         pass
         # if self.running:
         #     player_center = Point()
@@ -122,6 +132,7 @@ class Maze:
         #
         #     #goal_centers = maze_helper.goal_adaptive(self.start_rec,self.goal_rec,self.path_draw)
         #     pygame.display.update()
+        #time.pause(0.01)
 
     def update_GUI(self,msg):
         """
@@ -130,12 +141,13 @@ class Maze:
         :return:
         """
 
+
         if self.running:
             #AVQuestion could we speed this up by only drawing the blocks around the player's position?
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
             self.path_draw()
-
+            self.player_draw()
             if self.am_i_at_start:
                 self.am_i_at_goal = self.at_goal()
                 elapsed_time = time.time() - self.game_timer
@@ -143,11 +155,13 @@ class Maze:
                 self.am_i_at_start = self.at_start()
                 elapsed_time = 0
 
-            self.player_draw()
-            scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, elapsed_time)
-            textsurface = self.myfont.render(scoretext, False, maze_helper.WHITE)
-            self.display_surf.blit(textsurface, (0,0))
+
+            # scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, elapsed_time)
+            # textsurface = self.myfont.render(scoretext, False, maze_helper.WHITE)
+            # self.display_surf.blit(textsurface, (0,0))
             pygame.display.update()
+            #time.sleep(0.1)
+
 
     """
         callbacks (non-timers), mainly set up things
@@ -216,7 +230,7 @@ class Maze:
             print "Score:", self.score
             self.controller.make_force(player_center,v,wall_centers,goal_centers)
 
-        pygame.draw.rect(self.display_surf, maze_helper.WHITE,self.player, 0)
+        pygame.draw.rect(self.display_surf, maze_helper.WHITE, self.player, 0)
 
     def maze_draw(self):
         """
@@ -266,22 +280,22 @@ class Maze:
 
         return state.data
 
-
-    def update_score(self, assistance=3):
-
-        player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
-        player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)
-        point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
-        if maze_helper.check_cell(self.maze, int(point_index)) == 1:
-            self.score -= 1
-        for rec in self.solved_path:
-            if rec.centerx == player_x and rec.centery == player_y:
-                #print "On track"
-                reward = math.floor(1./len(self.solved_path) * 100)
-                self.score += reward
-            # else:
-            #     print "Player (x,y):", player_x, player_y
-            #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
+    #
+    # def update_score(self, assistance=3):
+    #
+    #     player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
+    #     player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)
+    #     point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
+    #     if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+    #         self.score -= 1
+    #     for rec in self.solved_path:
+    #         if rec.centerx == player_x and rec.centery == player_y:
+    #             #print "On track"
+    #             reward = math.floor(1./len(self.solved_path) * 100)
+    #             self.score += reward
+    #         # else:
+    #         #     print "Player (x,y):", player_x, player_y
+    #         #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
 
 
 if __name__ == "__main__":

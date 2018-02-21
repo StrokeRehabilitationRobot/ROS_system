@@ -10,7 +10,7 @@ class EnviromentDynamics():
         """
         """
         #rospy.init_node("haptics",anonymous=True)
-        self.pub = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
+        self.pub = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.k_obs  = -k_obs
         self.k_goal = k_goal
         self.b_obs  = b_obs
