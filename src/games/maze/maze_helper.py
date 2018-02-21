@@ -17,6 +17,12 @@ def invert(self):
     for index, row in enumerate(self.maze):
         self.maze[index] = row[::-1]
 
+def rec_to_point(rec):
+    pt = Point()
+    pt.x = rec.centerx
+    pt.y = rec.centery
+    return pt
+
 def get_i_j(maze,index):
     """
     converts 1D to 2D

@@ -9,6 +9,7 @@ import mazeBank
 import numpy as np
 from nav_msgs.msg import OccupancyGrid,Path
 from strokeRehabSystem.srv import ReturnJointStates
+from strokeRehabSystem.msg import hapticForce
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 from std_msgs.msg import Bool
 import rospy
@@ -53,7 +54,7 @@ class Maze:
         :param maze_name:
         """
 
-        #self.walls = []
+        self.walls = []
         self.starts = []
         self.goals = []
         self.goal_rec = None
@@ -77,11 +78,12 @@ class Maze:
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
         rospy.Timer(rospy.Duration(0.1), self.update_GUI)
+        rospy.Timer(rospy.Duration(0.01), self.update_player)
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_start  = rospy.Publisher('at_start', Bool, queue_size=1)
         self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
-
+        self.pub_forces = rospy.Publisher("haptic", hapticForce, queue_size=1)
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
 
@@ -90,6 +92,7 @@ class Maze:
 
         pygame.init()
         pygame.font.init()
+
         self.myfont = pygame.font.SysFont('Comic Sans MS', 18)
 
 
@@ -99,12 +102,14 @@ class Maze:
         :return:
         """
         self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
+
         self.running = True
         self.am_i_at_goal = False
         self.am_i_at_start = False
         self.score = 0
         self.starts = []
         self.goals = []
+
         self.game_timer = time.time()
         pygame.display.set_caption('Travel from Blue Square to Red Square')
         self.N = self.maze.info.height  # number of rows
@@ -142,34 +147,36 @@ class Maze:
             pygame.display.update()
 
 
-            #self.pub_player.publish(self.player)
-
-
     def maze_callback(self,msg):
         """
         saves the maze and sets up the game
         :param msg: occupany grid message
         :return:
         """
-        #AV_TODO: should we ditch this callback and have the subscriber just jump to on_init?
         self.maze = msg
-        self.on_init()
 
-    def invert(self):
-        for index, row in enumerate(self.maze):
-            self.maze[index] = row[::-1]
+        for index, pt in enumerate(self.maze.data):
+            bx,by = maze_helper.get_i_j(self.maze,index)
+            cell = maze_helper.check_cell(self.maze,index)
+            if cell == 1:
+                self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+
+            elif cell == 2:
+                self.starts.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                self.start_rec = self.starts[0].unionall(self.starts)
+
+            elif cell == 3:
+                self.goals.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+                self.goal_rec = self.goals[0].unionall(self.goals)
+
+        self.walls = np.asarray(self.walls)
+        self.on_init()
 
     def player_draw(self):
         """
         draws the player location
         :return:
         """
-        # start = self.at_start()
-        # goal  = self.at_goal()
-
-        x, y =  maze_helper.joint_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        #v = self.get_velocity()
-        self.player = pygame.Rect((x, y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
         player_center.x = self.player.centerx
         player_center.y = self.player.centery
@@ -183,6 +190,11 @@ class Maze:
 
         pygame.draw.rect(self.display_surf, WHITE,self.player, 0)
 
+    def update_player(self,msg):
+        (x, y) =  maze_helper.joint_to_game((0,self.windowWidth), (0,self.windowHeight) )
+        v = 0#self.get_velocity()
+        self.player = pygame.Rect((x, y, PLAYERSIZE_X, PLAYERSIZE_Y) )
+
     def get_velocity(self):
         dt = (time.time() - self.time0)
         v = tuple(map(sub, (self.player.centerx, self.player.centery) , self.pose_old))
@@ -191,36 +203,18 @@ class Maze:
         self.time0 = time.time()
         return v
 
+
     def maze_draw(self):
-        """
-        callback for the maze
-        draws the maze
-        :return:
-        """
+            """
+            callback for the maze
+            draws the maze
+            :return:
+            """
 
-        for index, pt in enumerate(self.maze.data):
-            bx,by = maze_helper.get_i_j(self.maze,index)
-            cell = maze_helper.check_cell(self.maze,index)
-            if cell == 1:
-                pygame.draw.rect(self.display_surf, PURPLE,
-                                 (bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                #self.walls.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-
-            elif cell == 2:
-                #pygame.draw.rect(self.display_surf, BLUE,
-                                 #(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.starts.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-                self.start_rec = self.starts[0].unionall(self.starts)
-                #print "Start Rectangle", self.start_rec
-                pygame.draw.rect(self.display_surf, BLUE, self.start_rec, 0)
-
-            elif cell == 3:
-                #pygame.draw.rect(self.display_surf, RED,
-                                 #(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y), 0)
-                self.goals.append(pygame.Rect(bx * BLOCKSIZE_X, by * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-                self.goal_rec = self.goals[0].unionall(self.goals)
-                pygame.draw.rect(self.display_surf, RED, self.goal_rec, 0)
-
+            for wall in self.walls:
+                    pygame.draw.rect(self.display_surf, PURPLE, wall, 0)
+            pygame.draw.rect(self.display_surf, RED, self.goal_rec, 0)
+            pygame.draw.rect(self.display_surf, BLUE, self.start_rec, 0)
 
 
     def path_callback(self,msg):
@@ -258,10 +252,8 @@ class Maze:
 
         """
         state = Bool()
-        print self.player
         state.data = self.start_rec.contains(self.player)
         if state.data:
-
             self.game_timer = time.time()
         #self.pub_start.publish(state)
         return state.data
@@ -271,11 +263,9 @@ class Maze:
         checks if we are at the goal
         :return: boolean check if we are at goal
         """
-        #goal = maze_helper.getGoal(self.maze)
-        #goal_pixels = (self.goal_rec.x, self.goal_rec.y)#(goal[0] * BLOCKSIZE_X, goal[1] * BLOCKSIZE_Y)
+
         state = Bool()
-        state.data = self.goal_rec.contains(self.player)#abs(self.player.x - goal_pixels[0]) < PLAYERSIZE_X and \
-                    #abs(self.player.y - goal_pixels[1]) < PLAYERSIZE_Y
+        state.data = self.goal_rec.contains(self.player)
         if state.data:
             self.pub_goal.publish(state)
             self.running = False
@@ -283,7 +273,6 @@ class Maze:
             self.score += time_score
 
         return state.data
-
 
     def check_collision_adaptive(self):
         #walls = []
@@ -310,13 +299,10 @@ class Maze:
 
     def goal_adaptive(self):
 
-        goal = Point()
-        start = Point()
         points = []
-        goal.x = self.goal_rec.centerx
-        goal.y = self.goal_rec.centery
-        start.x = self.start_rec.centerx
-        start.y = self.start_rec.centery
+        goal = maze_helper.rec_to_point(self.goal_rec)
+        start = maze_helper.rec_to_point(self.start_rec)
+        points.append(goal)
         points.append(start)
 
         if self.solved_path:
@@ -324,7 +310,6 @@ class Maze:
                 pt = Point()
                 pt.x = (rec.centerx * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
                 pt.y = (rec.centery * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
-                print pt
                 points.append(pt)
 
         points.append(goal)
@@ -338,10 +323,10 @@ class Maze:
         point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
         if maze_helper.check_cell(self.maze, int(point_index)) == 1:
             self.score -= 1
-        for pose in self.solved_path.poses:
-            if pose.pose.position.x == player_x and pose.pose.position.y == player_y:
+        for rec in self.solved_path:
+            if rec.centerx == player_x and rec.centery == player_y:
                 #print "On track"
-                reward = math.floor(1./len(self.solved_path.poses) * 100)
+                reward = math.floor(1./len(self.solved_path) * 100)
                 self.score += reward
             # else:
             #     print "Player (x,y):", player_x, player_y
