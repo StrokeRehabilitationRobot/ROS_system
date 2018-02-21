@@ -63,7 +63,7 @@ class Maze:
         self.odom_list = tf.TransformListener()
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
-        self.pub_forces = rospy.Publisher("motors_server", WrenchStamped, queue_size=1)
+        self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_forces = rospy.Publisher("haptic", hapticForce, queue_size=1)
 
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X

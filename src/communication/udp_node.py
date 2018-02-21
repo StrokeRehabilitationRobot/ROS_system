@@ -2,7 +2,7 @@
 from strokeRehabSystem.srv import *
 from strokeRehabSystem.msg import *
 from sensor_msgs.msg import JointState
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import WrenchStamped,Vector3Stamped
 from std_msgs.msg import Header
 import UDP
 import tools.helper
@@ -39,25 +39,21 @@ def udp_callback(downstream):
     state.effort = tau
     robot_state.publish(state)
 
-def torque_callback(force):
+def motors_callback(msg):
 
-    print "hello"
-    (position, velocity, effort) = tools.helper.call_return_joint_states()
 
     if force.header.frame_id == "slave":
         board = 1
     else:
         board = 0
-
-    F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
-    J = tools.dynamics.get_J_tranpose(position)
-    tau = np.array(J).dot(np.array(F).reshape(3, 1))
-    msg = tools.helper.make_tau_packet(F,1,board)
+    tau = [0,0,0]
+    motor = [vector.x,vector.y,vector.z ]
+    packet = tools.helper.make_motor_packet(motor,tau,1,board)
     print msg
     udp_callback(msg)
 
 
-def motor_callback(force):
+def torque_callback(force):
 
     motor = []
     (position, velocity, effort) = tools.helper.call_return_joint_states()
@@ -102,7 +98,7 @@ def udp_server():
     rospy.init_node('udp_server')
     rospy.Subscriber("udp", udpMessage, udp_callback)
     rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
-    rospy.Subscriber("motors_server", WrenchStamped, motor_callback)
+    rospy.Subscriber("motors_server", Vector3Stamped, motor_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
     rospy.Timer(rospy.Duration(0.001), status_callback)
     forces = WrenchStamped()
