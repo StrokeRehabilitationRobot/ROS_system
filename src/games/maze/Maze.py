@@ -46,6 +46,7 @@ PLAYERSIZE_Y = 10
 class Maze:
     windowWidth = 1000
     windowHeight = 600
+
     def __init__(self, maze_name="maze1"):
         """
 
@@ -58,9 +59,8 @@ class Maze:
         self.goal_rec = None
         self.start_rec = None
         # AV_TODO: can use player = player_rec?
-        self.player = Point()
-        (self.player.x, self.player.y) =  (self.windowWidth*0.5,self.windowHeight*0.5)
-        self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
+
+        self.player = Rect((self.windowWidth*0.5, self.windowHeight*0.5, PLAYERSIZE_X, PLAYERSIZE_Y) )
 
         self.solved_path = Path()
         self.score = 0
@@ -85,9 +85,6 @@ class Maze:
         d_goal = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + 1.5*BLOCKSIZE_X
         d_obs = 0.5*BLOCKSIZE_X + 0.5*PLAYERSIZE_X + BLOCKSIZE_X
 
-        player_center = Point()
-        player_center.x = self.player_rec.centerx
-        player_center.y = self.player_rec.centery
         self.controller = EnviromentDynamics.EnviromentDynamics(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
         self.controller.zero_force()
 
@@ -116,11 +113,7 @@ class Maze:
         self.player_draw()
         pygame.display.update()
 
-        player_center = Point()
-        player_center.x = self.player_rec.centerx
-        player_center.y = self.player_rec.centery
-
-        self.pose_old = (player_center.x,player_center.y)
+        self.pose_old = self.player
         self.controller.zero_force()
 
     def update_GUI(self,msg):
@@ -174,30 +167,27 @@ class Maze:
         # start = self.at_start()
         # goal  = self.at_goal()
 
-        (self.player.x, self.player.y) =  maze_helper.joint_to_game((0,self.windowWidth), (0,self.windowHeight)  )
-        v = self.get_velocity()
-        self.player_rec = pygame.Rect((self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y) )
-        # AV_TODO: can use player_center = player_rec.center?
+        x, y =  maze_helper.joint_to_game((0,self.windowWidth), (0,self.windowHeight)  )
+        #v = self.get_velocity()
+        self.player = pygame.Rect((x, y, PLAYERSIZE_X, PLAYERSIZE_Y) )
         player_center = Point()
-        player_center.x = self.player_rec.centerx
-        player_center.y = self.player_rec.centery
+        player_center.x = self.player.centerx
+        player_center.y = self.player.centery
         wall_centers = self.check_collision_adaptive()
         goal_centers = self.goal_adaptive()
 
         if self.am_i_at_start:
-
             self.update_score()
             print "Score:", self.score
             self.controller.make_force(player_center,v,wall_centers,goal_centers)
 
-        pygame.draw.rect(self.display_surf, WHITE,
-                         (self.player.x, self.player.y, PLAYERSIZE_X, PLAYERSIZE_Y), 0)
+        pygame.draw.rect(self.display_surf, WHITE,self.player, 0)
 
     def get_velocity(self):
         dt = (time.time() - self.time0)
-        v = tuple(map(sub, (self.player.x, self.player.y) , self.pose_old))
-        self.pose_old =(self.player.x, self.player.y)
-        v = tuple([x/dt for x in v])
+        v = tuple(map(sub, (self.player.centerx, self.player.centery) , self.pose_old))
+        self.pose_old = (self.player.centerx, self.player.centery)
+        v = (v[0]/dt,v[1]/dt)
         self.time0 = time.time()
         return v
 
@@ -270,7 +260,8 @@ class Maze:
                      abs(self.player.y - start_pixels[1]) < PLAYERSIZE_Y
         """
         state = Bool()
-        state.data = self.start_rec.contains(self.player_rec)
+        print self.player
+        state.data = self.start_rec.contains(self.player)
         if state.data:
 
             self.game_timer = time.time()
@@ -299,8 +290,8 @@ class Maze:
     def check_collision_adaptive(self):
         #walls = []
         centers = []
-        player_x = math.floor(float(self.player_rec.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
-        player_y = math.floor(float(self.player_rec.centery)/BLOCKSIZE_Y)
+        player_x = math.floor(float(self.player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+        player_y = math.floor(float(self.player.centery)/BLOCKSIZE_Y)
         for x in range(int(player_x) - 1, int(player_x) + 2):
             for y in range(int(player_y) - 1, int(player_y) + 2):
                 point_index = maze_helper.index_to_cell(self.maze, x, y)
@@ -344,8 +335,8 @@ class Maze:
 
     def update_score(self, assistance=3):
 
-        player_x = math.floor(float(self.player_rec.centerx) / BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
-        player_y = math.floor(float(self.player_rec.centery) / BLOCKSIZE_Y)
+        player_x = math.floor(float(self.player.centerx) / BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
+        player_y = math.floor(float(self.player.centery) / BLOCKSIZE_Y)
         point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
         if maze_helper.check_cell(self.maze, int(point_index)) == 1:
             self.score -= 1
