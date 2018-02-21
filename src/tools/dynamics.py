@@ -191,7 +191,7 @@ def fk(joints):
              )
 
 
-    return ( pose_1, pose_2, pose_3  )
+    return  pose_1, pose_2, pose_3  
 
 def ik(robot, pose):
     """

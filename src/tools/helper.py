@@ -152,7 +152,7 @@ def filter_tau(interpolated_tau,i):
 
 
 def get_lengths():
-    lengths = [0.25107, 0.191, 0.37843]
+    lengths = [0.15, 0.21, 0.16]
     return lengths
 
 def get_ineria():

@@ -129,11 +129,12 @@ def joint_to_game(x_range, y_range  ):
 
 def task_to_game(odom_list,x_range, y_range):
 
-
-    odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
-    (position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-    EE_y = tools.helper.remap(position[1],-0.20,0.20,x_range[0],x_range[1] )
-    EE_x = tools.helper.remap(position[2],0.15,-0.15,y_range[0],y_range[1])
+    #odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
+    #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+    (_,_,EE) = tools.dynamics.fk(position)
+    EE_y = tools.helper.remap(EE[1],-0.20,0.20,x_range[0],x_range[1] )
+    EE_x = tools.helper.remap(-EE[2],0.15,-0.15,y_range[0],y_range[1])
 
     return (EE_y,EE_x)
 
@@ -148,3 +149,46 @@ def neighbors_manhattan(maze,loc_x, loc_y):
             neighbors_out.append(option)
 
     return neighbors_out
+
+
+
+def check_collision_adaptive(self,player,maze):
+    walls = []
+    centers = []
+
+    player_x = math.floor(float(player.centerx)/maze_helper.BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+    player_y = math.floor(float(player.centery)/maze_helper.BLOCKSIZE_Y)
+    for x in range(int(player_x) - 1, int(player_x) + 2):
+        for y in range(int(player_y) - 1, int(player_y) + 2):
+            point_index = maze_helper.index_to_cell(self.maze, x, y)
+            neighbors = maze_helper.neighbors_manhattan(maze, x,y)
+            #goal = maze_helper.getGoal(self.maze)
+            if maze_helper.check_cell(self.maze, int(point_index)) == 1 and not near_goal:
+                point = Point()
+                wall_block = pygame.Rect((x * maze_helper.BLOCKSIZE_X, y * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
+                point.x = wall_block.centerx
+                point.y = wall_block.centery
+                centers.append(point)
+                walls.append(wall_block)
+
+    return centers,walls
+
+
+def goal_adaptive(self,start,goal,path):
+
+    points = []
+    goal = maze_helper.rec_to_point(goal)
+    start = maze_helper.rec_to_point(start)
+    points.append(goal)
+    points.append(start)
+
+    if path:
+        for rec in path:
+            pt = Point()
+            pt.x = (rec.centerx * maze_helper.BLOCKSIZE_X) + math.floor(abs((maze_helper.BLOCKSIZE_X - maze_helper.PLAYERSIZE_X) * 0.5))
+            pt.y = (rec.centery * maze_helper.BLOCKSIZE_Y) + math.floor(abs((maze_helper.BLOCKSIZE_Y - maze_helper.PLAYERSIZE_Y) * 0.5))
+            points.append(pt)
+
+    points.append(goal)
+
+    return points
