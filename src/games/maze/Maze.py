@@ -28,8 +28,7 @@ import time
 
 class Maze:
 
-    windowWidth = 1000
-    windowHeight = 600
+
 
     def __init__(self, maze_name="maze1"):
         """
@@ -44,7 +43,7 @@ class Maze:
         self.start_rec = None
         self.x_avg = []
         self.y_avg = []
-        self.player = Rect((self.windowWidth*0.5, self.windowHeight*0.5, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+        self.player = Rect((maze_helper.windowWidth*0.5, maze_helper.windowHeight*0.5, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
 
         self.solved_path = []
         self.score = 0
@@ -70,11 +69,6 @@ class Maze:
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
 
-        d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X
-        d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + maze_helper.BLOCKSIZE_X
-
-        self.controller = EnviromentDynamics.EnviromentDynamics(0.01,0.001,0.0001,0.0001,d_obs,d_goal)
-        self.controller.zero_force()
 
         player_thread = threading.Thread(target=self.update_player)
         player_thread.daemon = True
@@ -96,7 +90,7 @@ class Maze:
         sets up the game
         :return:
         """
-        self.display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight))
+        self.display_surf = pygame.display.set_mode((maze_helper.windowWidth, maze_helper.windowHeight))
 
         self.running = True
         self.am_i_at_goal = False
@@ -120,9 +114,9 @@ class Maze:
     def update_player(self):
 
         while 1:
-            (x, y) =  maze_helper.task_to_game( (0,self.windowWidth), (0,self.windowHeight) )
-            v = 0#self.get_velocity()
+            (x, y) =  maze_helper.task_to_game( (0,maze_helper.windowWidth), (0,maze_helper.windowHeight) )
             self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+            v = self.get_velocity()
             time.sleep(0.01)
 
 
@@ -185,7 +179,7 @@ class Maze:
         :return:
         """
         self.maze = msg
-
+        self.walls = []
         for index, pt in enumerate(self.maze.data):
             bx,by = maze_helper.get_i_j(self.maze,index)
             cell = maze_helper.check_cell(self.maze,index)
@@ -198,7 +192,7 @@ class Maze:
                 self.goals.append(pygame.Rect(bx * maze_helper.BLOCKSIZE_X, by * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
                 self.goal_rec = self.goals[0].unionall(self.goals)
 
-        self.walls = np.asarray(self.walls)
+        #self.walls = np.asarray(self.walls)
         self.on_init()
 
 
@@ -238,7 +232,6 @@ class Maze:
         if self.am_i_at_start:
             self.update_score()
             print "Score:", self.score
-            self.controller.make_force(player_center,v,wall_centers,goal_centers)
 
         pygame.draw.rect(self.display_surf, maze_helper.WHITE, self.player, 0)
 
@@ -255,11 +248,14 @@ class Maze:
         pygame.draw.rect(self.display_surf, maze_helper.BLUE, self.start_rec, 0)
 
     def get_velocity(self):
-        dt = (time.time() - self.time0)
-        v = tuple(map(sub, (self.player.centerx, self.player.centery) , self.pose_old))
+        dt = 0.01#(time.time() - self.time0)
+        xd =  self.player.centerx - self.pose_old[0]
+        yd =  self.player.centery - self.pose_old[1]
+        v = (xd,yd)
         self.pose_old = (self.player.centerx, self.player.centery)
         v = (v[0]/dt,v[1]/dt)
         self.time0 = time.time()
+        print "gane",v
         return v
 
     def at_start(self):
@@ -310,6 +306,6 @@ class Maze:
 
 if __name__ == "__main__":
 
-   game = Maze()
-   while not rospy.is_shutdown():
-       rospy.spin()
+    game = Maze()
+    while not rospy.is_shutdown():
+        rospy.spin()

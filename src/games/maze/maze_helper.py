@@ -34,6 +34,8 @@ BLOCKSIZE_Y = 30
 PLAYERSIZE_X = 10
 PLAYERSIZE_Y = 10
 
+windowWidth = 1000
+windowHeight = 600
 
 def invert(self):
     for index, row in enumerate(self.maze):
@@ -125,7 +127,7 @@ def joint_to_game(x_range, y_range  ):
     (position, velocity, effort) = tools.helper.call_return_joint_states()
     # scales the input to the game
     EE_y = tools.helper.remap(round(position[0],5),-0.6,0.6,x_range[0],x_range[1] )
-    EE_x = tools.helper.remap(round(position[2],5),1.9,0.6,y_range[0],y_range[1])
+    EE_x = tools.helper.remap(round(position[2],5),0.6,1.9,y_range[0],y_range[1])
     #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
     return (EE_y,EE_x)
 
@@ -136,9 +138,20 @@ def task_to_game(x_range, y_range):
     (position, velocity, effort) = tools.helper.call_return_joint_states()
     (_,_,EE) = tools.dynamics.fk(position)
     EE_y = tools.helper.remap(EE[1],-0.20,0.20,x_range[0],x_range[1] )
-    EE_x = tools.helper.remap(-EE[2],0.15,-0.15,y_range[0],y_range[1])
+    EE_x = tools.helper.remap(-EE[2],0.10,-0.15,y_range[0],y_range[1])
 
     return (EE_y,EE_x)
+
+def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
+    neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
+                    (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\
+                    (loc_x - 1, loc_y + 1), (loc_x, loc_y + 1), (loc_x + 1, loc_y + 1)]
+    neighbors_out = []
+    for option in neighbors_in:
+        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+            neighbors_out.append(option)
+
+    return neighbors_out
 
 def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
 
@@ -160,7 +173,7 @@ def check_collision_adaptive(player,maze):
     centers = []
     player_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
     player_y = int(float(player.centery)/BLOCKSIZE_Y)
-    neighbor_walls = neighbors_manhattan(maze, player_x,player_y, [1])
+    neighbor_walls = neighbors_euclidean(maze, player_x,player_y, [1])
     for neighbor in neighbor_walls:
         point = Point()
         wall_block = pygame.Rect((neighbor[0] * BLOCKSIZE_X, neighbor[1] * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
@@ -168,11 +181,7 @@ def check_collision_adaptive(player,maze):
         point.y = wall_block.centery
         centers.append(point)
         walls.append(wall_block)
-    ##TODO: Delete these lines to have more than one wall at a time
-    if len(walls) > 0:
-        index_to_keep = len(walls)/2 # Should be int 0, 1, or 2
-        walls = [walls[index_to_keep]]
-    #######
+
 
     return centers,walls
 
