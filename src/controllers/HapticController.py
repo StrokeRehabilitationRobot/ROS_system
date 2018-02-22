@@ -40,7 +40,7 @@ class HapticController():
         task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
         yd = tools.helper.remap(task_velocity[1],-0.20,0.20,0,maze_helper.windowWidth)
         zd = tools.helper.remap(-task_velocity[2],0.10,-0.15,0,maze_helper.windowHeight)
-        print task_velocity
+        print [yd,zd]
 
     def move(self):
         """
