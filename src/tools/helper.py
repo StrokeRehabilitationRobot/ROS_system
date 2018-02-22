@@ -119,13 +119,6 @@ def call_return_joint_states():
             #print "joint %s not found!"%joint_name
     return (resp.position, resp.velocity, resp.effort)
 
-def robot_to_game(x_range, y_range  ):
-    (position, velocity, effort) = call_return_joint_states()
-    # scales the input to the game
-    EE_y = remap(position[0],-0.6,0.6,x_range[0],x_range[1] )
-    EE_x = remap(position[2],1.9,0.6,y_range[0],y_range[1])
-    #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
-    return (EE_y,EE_x)
 
 def norm_tau(u):
     """
@@ -159,7 +152,7 @@ def filter_tau(interpolated_tau,i):
 
 
 def get_lengths():
-    lengths = [0.25107, 0.191, 0.37843]
+    lengths = [0.15, 0.21, 0.16]
     return lengths
 
 def get_ineria():

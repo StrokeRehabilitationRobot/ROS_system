@@ -151,16 +151,16 @@ def get_jacobian_matricies(joints):
     J_1[5,0] = 1
 
 
-    J_2 = np.matrix(  [ [-r[0] * c(theta_2), 0, 0],
+    J_2 = np.matrix(  [ [-r[1] * c(theta_2), 0, 0],
                         [  0,                              0,                0],
-                        [0, -r[0], 0],
+                        [0, -r[1], 0],
                         [  0,                             -1,                0],
                         [  -s(theta_2),                    0,                0],
                         [c(theta_2),                       0,                0] ] )
 
-    J_3 = np.matrix( [ [-l[1] * c(theta_2) - r[1] * c(theta_2 + theta_3), 0, 0],
-                       [ 0, l[0] * s(theta_1), 0],
-                       [ 0,                   -r[1] - l[0] * c(theta_3),                                     -r[1]],
+    J_3 = np.matrix( [ [-l[2] * c(theta_2) - r[2] * c(theta_2 + theta_3), 0,                  0],
+                       [ 0, l[1] * s(theta_3),                                                0],
+                       [ 0,                   -r[2] - l[0] * c(theta_3),                  -r[2]],
                        [ 0,                                          -1,                    -1 ],
                        [-s(theta_2+theta_3),                          0,                     0 ],
                        [c(theta_2+theta_3),                           0,                     0 ] ])
@@ -191,7 +191,7 @@ def fk(joints):
              )
 
 
-    return ( pose_1, pose_2, pose_3  )
+    return  pose_1, pose_2, pose_3
 
 def ik(robot, pose):
     """

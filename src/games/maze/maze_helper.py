@@ -1,25 +1,51 @@
 #!/usr/bin/env python
 
+import sys
+import numpy as np
+from strokeRehabSystem.srv import ReturnJointStates
+from geometry_msgs.msg import Pose,Point, WrenchStamped
+from std_msgs.msg import Bool
+import rospy
 import pygame
-from pygame.locals import *
+import time
 import math
-import mazeBank
-import numpy
+import tf
+import tools.joint_states_listener
+import tools.helper
 
-# Colors for use throughout
+
 RED = (255,0,0)
+PEACH = (255,100,100)
+YELLOW = (200,200,0)
 GREEN = (0,255,0)
+MINT = (100,255,175)
+AQUA = (0,150,150)
 BLUE = (0,0,255)
 DARK_BLUE = (0,0,128)
-WHITE = (255,255,255)
-BLACK = (0,0,0)
 PINK = (255,200,200)
 PURPLE = (255,150,255)
+MAGENTA = (100,0,100)
+WHITE = (255,255,255)
+BLACK = (0,0,0)
 
+# Map element sizes
+BLOCKSIZE_X = 30
+BLOCKSIZE_Y = 30
+PLAYERSIZE_X = 10
+PLAYERSIZE_Y = 10
+
+windowWidth = 1000
+windowHeight = 600
 
 def invert(self):
     for index, row in enumerate(self.maze):
         self.maze[index] = row[::-1]
+
+def rec_to_point(rec):
+    pt = Point()
+    pt.x = rec.centerx
+    pt.y = rec.centery
+    return pt
 
 def get_i_j(maze,index):
     """
@@ -96,23 +122,85 @@ def index_to_cell(maze,x,y):
     else:
         return maze.info.width*y + x
 
-# def neighbors_euclidean(maze, loc_x, loc_y):
-#     neighbors = []
-#     for x in range(loc_x - 1, loc_x + 2):
-#         for y in range(loc_y - 1, loc_y + 2):
-#             if check_cell(maze, index_to_cell(maze, x, y)) in (0, 2, 3):
-#                 neighbors.append((x, y))
-#
-#     return neighbors
+def joint_to_game(x_range, y_range  ):
 
-def neighbors_manhattan(maze,loc_x, loc_y):
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+    # scales the input to the game
+    EE_y = tools.helper.remap(round(position[0],5),-0.6,0.6,x_range[0],x_range[1] )
+    EE_x = tools.helper.remap(round(position[2],5),0.6,1.9,y_range[0],y_range[1])
+    #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
+    return (EE_y,EE_x)
+
+def task_to_game(x_range, y_range):
+
+    #odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
+    #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+    (position, velocity, effort) = tools.helper.call_return_joint_states()
+    (_,_,EE) = tools.dynamics.fk(position)
+    EE_y = tools.helper.remap(EE[1],-0.20,0.20,x_range[0],x_range[1] )
+    EE_x = tools.helper.remap(-EE[2],0.10,-0.15,y_range[0],y_range[1])
+
+    return (EE_y,EE_x)
+
+def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
+    neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
+                    (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\
+                    (loc_x - 1, loc_y + 1), (loc_x, loc_y + 1), (loc_x + 1, loc_y + 1)]
+    neighbors_out = []
+    for option in neighbors_in:
+        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+            neighbors_out.append(option)
+
+    return neighbors_out
+
+def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
 
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
         #print "checking point: ", index_to_cell(maze, option[0], option[1])
         #print "cell ID: ", check_cell(maze, index_to_cell(maze, option[0], option[1]))
-        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in (0, 2, 3):
+        if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
             neighbors_out.append(option)
 
     return neighbors_out
+
+
+
+def check_collision_adaptive(player,maze):
+
+    walls = []
+    centers = []
+    player_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+    player_y = int(float(player.centery)/BLOCKSIZE_Y)
+    neighbor_walls = neighbors_euclidean(maze, player_x,player_y, [1])
+    for neighbor in neighbor_walls:
+        point = Point()
+        wall_block = pygame.Rect((neighbor[0] * BLOCKSIZE_X, neighbor[1] * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
+        point.x = wall_block.centerx
+        point.y = wall_block.centery
+        centers.append(point)
+        walls.append(wall_block)
+
+
+    return centers,walls
+
+
+def goal_adaptive(start,goal,path):
+
+    points = []
+    goal = maze_helper.rec_to_point(goal)
+    start = maze_helper.rec_to_point(start)
+    points.append(goal)
+    points.append(start)
+
+    if path:
+        for rec in path:
+            pt = Point()
+            pt.x = (rec.centerx * maze_helper.BLOCKSIZE_X) + math.floor(abs((maze_helper.BLOCKSIZE_X - maze_helper.PLAYERSIZE_X) * 0.5))
+            pt.y = (rec.centery * maze_helper.BLOCKSIZE_Y) + math.floor(abs((maze_helper.BLOCKSIZE_Y - maze_helper.PLAYERSIZE_Y) * 0.5))
+            points.append(pt)
+
+    points.append(goal)
+
+    return points
