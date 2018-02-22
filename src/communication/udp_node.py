@@ -12,8 +12,7 @@ import math
 import numpy as np
 
 udp = UDP.UDP(9876)
-robot_state = rospy.Publisher('joint_states', JointState, queue_size=1,latch=True)
-
+robot_state = rospy.Publisher('unfilter_joint_states', JointState, queue_size=1,latch=True)
 
 def udp_callback(downstream):
 
