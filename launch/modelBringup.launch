@@ -15,7 +15,7 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
   <node pkg="strokeRehabSystem" type="joint_states_listener.py" name="joint_state_listener" output="screen">
   </node>
-  <node name="filter_joints" pkg="strokeRehabSystem" type="FilterJoints"/>
+   <node name="FilterJoints" pkg="strokeRehabSystem" type="FilterJoints.py" />
   <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="false" /> -->
   <include file="$(find strokeRehabSystem)/launch/hardwareConnect.launch"/>
 

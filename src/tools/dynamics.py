@@ -159,13 +159,23 @@ def get_jacobian_matricies(joints):
                         [c(theta_2),                       0,                0] ] )
 
     J_3 = np.matrix( [ [-l[2] * c(theta_2) - r[2] * c(theta_2 + theta_3), 0,                  0],
-                       [ 0, l[1] * s(theta_3),                                                0],
+                       [ 0,                           l[1] * s(theta_3),                      0],
                        [ 0,                   -r[2] - l[0] * c(theta_3),                  -r[2]],
                        [ 0,                                          -1,                    -1 ],
                        [-s(theta_2+theta_3),                          0,                     0 ],
                        [c(theta_2+theta_3),                           0,                     0 ] ])
 
-    return (J_1, J_2, J_3)
+
+
+    j = np.matrix( [[(l[2]*s(theta_1)*s(theta_1+theta_2))-(l[1]*s(theta_1)*c(theta_2)),((-1)*l[2]*c(theta_1)*c(theta_2+theta_3))-(l[1]*c(theta_1)*s(theta_1)), (-1*(c(theta_1))*l[2]*(s(theta_2 + theta_3)))],
+                    [(l[1]*c(theta_1)*c(theta_2))-(l[2]*c(theta_1)*s(theta_2+theta_3)),(-1*l[1]*s(theta_1)*s(theta_2))-(l[2]*s(theta_1)*c(theta_2+theta_3)), (l[2]*s(theta_2+theta_3))-(l[1]*c(theta_2))],
+                    [(-1*l[2]*c(theta_1)*c(theta_2+theta_3)),   ((-1)*l[2]*s(theta_1)*c(theta_2+theta_3)),                                                   l[2]*s(theta_2+theta_3)],
+                    [0,                                                                  (-1)*s(theta_1),                                                         (-1)*s(theta_1)],
+                    [0,                                                                  c(theta_1),                                                              c(theta_1)],
+                    [1 ,                                                                 0,                                                                        0]])
+
+
+    return (J_1, J_2, j)
 
 
 def fk(joints):
@@ -206,7 +216,7 @@ def ik(robot, pose):
     z = pose[2]
 
     theta_1 = math.atan2(y,z)
-    theta_3 = -math.acos( (x*x + y*y + (z- l[0])**2 -l[1]*l[1] - l[2]*l[2])/ ( 2*l[1]*l[2] )   ) - 0.5*math.pi
+    theta_3 = -math.ac( (x*x + y*y + (z- l[0])**2 -l[1]*l[1] - l[2]*l[2])/ ( 2*l[1]*l[2] )   ) - 0.5*math.pi
     theta_2 = math.atan2( z- l[0] , math.sqrt(x*x, y*y) ) - math.atan2( l[2]*s(theta_3), l[1] + l[2]*c(theta_3) )
 
     return (theta_1, theta_2, theta_3)
