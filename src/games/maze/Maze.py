@@ -66,7 +66,6 @@ class Maze:
         # rospy.Timer(rospy.Duration(0.01), self.update_force)
         self.odom_list = tf.TransformListener()
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
-        self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
 
 

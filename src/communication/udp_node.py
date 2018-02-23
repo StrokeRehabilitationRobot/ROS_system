@@ -47,7 +47,7 @@ def motors_callback(msg):
     tau = [0,0,0]
     motor = [vector.x,vector.y,vector.z ]
     packet = tools.helper.make_motor_packet(motor,tau,1,board)
-    print msg
+    #print msg
     udp_callback(msg)
 
 

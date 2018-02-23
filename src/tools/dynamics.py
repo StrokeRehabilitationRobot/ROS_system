@@ -221,6 +221,25 @@ def ik(robot, pose):
 
     return (theta_1, theta_2, theta_3)
 
+def rotation_matrix(joints):
+    theta_1 = joints[0]
+    theta_2 = joints[1]
+    theta_3 = joints[2]
+
+    r_11 = math.cos(theta_3 + math.pi/2)*math.cos(theta_1) + math.sin(theta_3 + math.pi/2)*math.sin(theta_1)*math.sin(theta_2)
+    r_12 = math.cos(theta_2)*math.sin(theta_1)
+    r_13 = -math.cos(theta_3 + math.pi/2)*math.sin(theta_1)*math.sin(theta_2) + math.sin(theta_3 + math.pi/2)*math.cos(theta_1)
+
+    r_21 = -math.sin(theta_3 + math.pi/2)*math.cos(theta_1)*math.sin(theta_2) + math.cos(theta_3 + math.pi/2)*math.sin(theta_1)
+    r_22 = -math.cos(theta_2)*math.cos(theta_1)
+    r_23 = -math.sin(theta_3 + math.pi/2)*math.sin(theta_1) + math.cos(theta_3 + math.pi/2)*math.cos(theta_1)*math.sin(theta_2)
+
+    r_31 = math.sin(theta_3 + math.pi/2)*math.cos(theta_2)
+    r_32 = -math.sin(theta_2)
+    r_33 = -math.cos(theta_3 + math.pi/2)*math.cos(theta_2)
+
+    rotation_matrix = [[r_11, r_12, r_13], [r_21, r_22, r_23],[r_31, r_32, r_33]]
+    return rotation_matrix
 
 def get_torque(robot):
     """
@@ -267,7 +286,7 @@ def get_linear_vel(robot):
     return  J*qd
 
 def get_J_tranpose(joints):
-    """
+    """position
 
     :param robot:
     :return:
