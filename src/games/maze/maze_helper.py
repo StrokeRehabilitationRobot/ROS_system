@@ -158,8 +158,6 @@ def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
-        #print "checking point: ", index_to_cell(maze, option[0], option[1])
-        #print "cell ID: ", check_cell(maze, index_to_cell(maze, option[0], option[1]))
         if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
             neighbors_out.append(option)
 

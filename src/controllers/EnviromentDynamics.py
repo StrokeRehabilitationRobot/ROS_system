@@ -5,8 +5,11 @@ from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 import math
 import numpy as np
+from math import sin as sin
+from math import cos as cos
 import games.maze.maze_helper as maze_helper
 import tools.dynamics
+import tf
 
 class EnviromentDynamics():
 
@@ -49,14 +52,53 @@ class EnviromentDynamics():
             F = self.k_obs * ( max(self.d_obs - d,0))
             f_y += round(F*math.sin(theta),2) #- self.b_obs*msg.v[1]
             f_x += round(F*math.cos(theta),2) #- self.b_obs*msg.v[0]
-            print "f_x:", f_x, "\nf_y:", f_y
-            # The x direction on-screen is the -y direction in the base frame
-            # The y direction on-screen is the -z direction in the base frame
-
+            # As of Feb 24, the calculations above are correct, given accurate player position and relevant obstacles
+            # The x direction on-screen is the y direction in the base frame
+            # The y direction on-screen is the z direction in the base frame
+        if abs(f_x) < 0.25:
+            f_x = 0
+        if abs(f_y) < 0.25:
+            f_y = 0
         (position, _v, _e) = tools.helper.call_return_joint_states()
-        rot_mat = tools.dynamics.rotation_matrix(position)
-        rot_mat_T = np.transpose(rot_mat)
-        #print np.dot(np.array(rot_mat), np.array([0,1,0]).reshape(3,1))
-        f_tip = np.dot(np.array(rot_mat_T), np.array([0, f_y, f_x]).reshape(3,1))
+        rot_mat = self.rotation_matrix()
+        # As of Feb 24, the rotation matrix above is correct, with the following relationships:
+        #########################################################
+        # Player Motion # Base Frame Motion # Tip Frame Motion* # *When Robot at (0, 0, 0)
+        #########################################################
+        # Out of screen # +X Axis           # -X Axis           #
+        #########################################################
+        # Into screen   # -X Axis           # +X Axis           #
+        #########################################################
+        # Player right  # +Y Axis           # -Z Axis           #
+        #########################################################
+        # Player left   # -Y Axis           # +Z Axis           #
+        #########################################################
+        # Player down   # +Z Axis           # -Y Axis           #
+        #########################################################
+        # Player up     # -Z Axis           # +Y Axis           #
+        #########################################################
+        #print np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3,1)    # Test Rotations from base frame to tip frame
+        f_tip = np.dot(np.array(rot_mat), [0, round(f_x, 1), round(f_y,1) ]).reshape(3,1)
 
-        return  f_tip #np.array(([-round(f_x,1), -round(f_y, 1), 0 ])).reshape(3, 1)
+        #f_tip = [0, 0, 5]   # Test transformation from tip force to joint torques
+        # f_tip = [ in/out, left/right, up/down]
+        print "(right, down) = (%.1f, %.1f)" %(f_x, f_y)
+        print "(tip_in, tip_left, tip_up) = (%.1f, %.1f, %.1f)" %(f_tip[0], f_tip[2], f_tip[1])
+
+        # Somewhere along the line, something got switched around. Rearranging forces here.
+        f_tip = [f_tip[0], f_tip[2], f_tip[1]]
+        return f_tip
+
+
+
+
+    def rotation_matrix(self):
+
+        (position, velocity, _) = tools.helper.call_return_joint_states()
+        rotation_matrix = np.matrix([[    cos(position[2] + 1.57)*cos(position[0])*cos(position[1]) - sin(position[2] + 1.57)*cos(position[0])*sin(position[1]),   - cos(position[2] + 1.57)*cos(position[0])*sin(position[1]) - sin(position[2] + 1.57)*cos(position[0])*cos(position[1]),  sin(position[0])],
+                                     [ sin(position[2] + 1.57)*( - sin(position[0])*sin(position[1])) + cos(position[2] + 1.57)*( cos(position[1])*sin(position[0])), cos(position[2] + 1.57)*( - sin(position[0])*sin(position[1])) - sin(position[2] + 1.57)*(cos(position[1])*sin(position[0])),      -cos(position[0])],
+                                     [                                      cos(position[2] + 1.57)*sin(position[1]) + sin(position[2] + 1.57)*cos(position[1]),                                       cos(position[2] + 1.57)*cos(position[1]) - sin(position[2] + 1.57)*sin(position[1]),                 0]])
+
+        rotation_matrix = np.transpose(rotation_matrix)
+
+        return rotation_matrix

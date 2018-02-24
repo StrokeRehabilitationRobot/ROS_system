@@ -46,13 +46,14 @@ class HapticController():
         F = self.calc_arm_input()
         #add environmental pub_forces
         F_env = self.environment.make_force(haptic)
-        self.move(F + F_env)
+        self.move(F)
 
         #output forces to arm
         output_force = WrenchStamped()
+        output_force.header.frame_id = "base_link"
         [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = F_env
-        #print F_env
         self.pub_forces.publish(output_force)
+
 
     def calc_arm_input(self):
         (position, velocity, _) = tools.helper.call_return_joint_states()
@@ -65,6 +66,7 @@ class HapticController():
         F = self.controller.get_F(e,ed)
         F = np.round(F,2)
         return F
+
 
     def move(self, F):
         """

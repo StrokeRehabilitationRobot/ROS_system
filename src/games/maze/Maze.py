@@ -227,7 +227,7 @@ class Maze:
 
         if self.am_i_at_start:
             self.update_score()
-            print "Score:", self.score
+            #print "Score:", self.score
 
         pygame.draw.rect(self.display_surf, maze_helper.WHITE, self.player, 0)
 
