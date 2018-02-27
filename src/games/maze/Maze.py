@@ -229,7 +229,7 @@ class Maze:
             self.update_score()
             #print "Score:", self.score
 
-        pygame.draw.rect(self.display_surf, maze_helper.WHITE, self.player, 0)
+        pygame.draw.ellipse(self.display_surf, maze_helper.WHITE, self.player, 0)
 
     def maze_draw(self):
         """

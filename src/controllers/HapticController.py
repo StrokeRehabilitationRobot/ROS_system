@@ -46,7 +46,9 @@ class HapticController():
         F = self.calc_arm_input()
         #add environmental pub_forces
         F_env = self.environment.make_force(haptic)
+        #print F_env
         self.move(F)
+        F_plane = self.calc_plane_forces()
 
         #output forces to arm
         output_force = WrenchStamped()
@@ -67,6 +69,17 @@ class HapticController():
         F = np.round(F,2)
         return F
 
+    def calc_plane_forces(self):
+        (position, velocity, _) = tools.helper.call_return_joint_states()
+        self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
+        (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
+        task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
+        e =  self.state[0:3]-np.array(task_position).reshape(3, 1)
+        ed =  self.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
+        F = self.controller.get_F(e,ed)
+        F = np.round(F,2)
+        return F
 
     def move(self, F):
         """
