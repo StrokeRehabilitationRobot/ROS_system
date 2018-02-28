@@ -24,6 +24,9 @@ class EnviromentDynamics():
         self.d_obs = d_obs
         self.d_goal = d_goal
         self.goal_angle = goal_angle
+        self.odom_list = tf.TransformListener()
+        self.pub_base = rospy.Publisher('base_force', WrenchStamped, queue_size=1)
+        self.pub_tip = rospy.Publisher('tip_force', WrenchStamped, queue_size=1)
 
     def make_force(self, msg):
         f_y = 0  # force in the y direction (positive DOWN on screen)
@@ -54,48 +57,42 @@ class EnviromentDynamics():
             F = self.k_obs * (max(self.d_obs - d, 0))
             f_y += round(F * math.sin(theta), 2)  # - self.b_obs*msg.v[1]
             f_x += round(F * math.cos(theta), 2)  # - self.b_obs*msg.v[0]
-            # As of Feb 24, the calculations above are correct, given accurate player position and relevant obstacles
-            # The x direction on-screen is the y direction in the base frame
-            # The y direction on-screen is the z direction in the base frame
+
+        (position, _v, _e) = tools.helper.call_return_joint_states()
+        rot_mat = self.rotation_matrix()
+
         if abs(f_x) < 0.25:
             f_x = 0
         if abs(f_y) < 0.25:
             f_y = 0
-        (position, _v, _e) = tools.helper.call_return_joint_states()
-        rot_mat = self.rotation_matrix()
-        # As of Feb 24, the rotation matrix above is correct, with the following relationships:
-        #########################################################
-        # Player Motion # Base Frame Motion # Tip Frame Motion* # *When Robot at (0, 0, 0)
-        #########################################################
-        # Out of screen # +X Axis           # -X Axis           #
-        #########################################################
-        # Into screen   # -X Axis           # +X Axis           #
-        #########################################################
-        # Player right  # +Y Axis           # -Z Axis           #
-        #########################################################
-        # Player left   # -Y Axis           # +Z Axis           #
-        #########################################################
-        # Player down   # +Z Axis           # -Y Axis           #
-        #########################################################
-        # Player up     # -Z Axis           # +Y Axis           #
-        #########################################################
-        print np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3, 1)    # Test Rotations from base frame to tip frame
 
-        f_tip = np.dot(np.array(rot_mat), [0, round(
-            f_x, 1), round(f_y, 1)]).reshape(3, 1)
+        #print "Base frame motions: x(left): %.2f, z(up): %.2f" %(-round(f_x,1), -round(f_y, 1))
+        base_force = WrenchStamped()
+        base_force.header.frame_id = "base_link"
+        base_force.wrench.force.x = 0
+        base_force.wrench.force.y = round(f_x, 1)
+        base_force.wrench.force.z = -round(f_y, 1)
+        self.pub_base.publish(base_force)
+        f_tip = np.dot(np.array(rot_mat), [0, round(f_x, 1), -round(f_y, 1)]).reshape(3, 1)
+        #f_tip = np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3, 1)
+        tip_force = WrenchStamped()
+        tip_force.header.frame_id = "master_EE"
+        tip_force.wrench.force.x = f_tip[0]
+        tip_force.wrench.force.y = f_tip[1]
+        tip_force.wrench.force.z = f_tip[2]
+        self.pub_tip.publish(tip_force)
 
-        # f_tip = [0, 0, 5]   # Test transformation from tip force to joint torques
-        # f_tip = [ in/out, left/right, up/down]
-        # print "(right, down) = (%.1f, %.1f)" %(f_x, f_y)
-        # print "(tip_in, tip_left, tip_up) = (%.1f, %.1f, %.1f)" %(f_tip[0], f_tip[2], f_tip[1])
+        #print "(tip_x, tip_y, tip_z) = (%.1f, %.1f, %.1f)" %(f_tip[0], f_tip[1], f_tip[2])
 
-        # Somewhere along the line, something got switched around. Rearranging forces here.
-        f_tip = [f_tip[0], f_tip[2], f_tip[1]]
+        f_tip = [f_tip[0], f_tip[1], f_tip[2]]
         return f_tip
 
     def rotation_matrix(self):
 
         (position, velocity, _) = tools.helper.call_return_joint_states()
+        self.odom_list.waitForTransform('master_EE', 'base_link', rospy.Time(0), rospy.Duration(0.1))
+        (task_position, rotation_matrix) = self.odom_list.lookupTransform('master_EE', 'base_link', rospy.Time(0))
+        rotation_matrix = self.odom_list.fromTranslationRotation(task_position, rotation_matrix)
         # rotation_matrix = np.matrix([[    cos(position[2] + 1.57)*cos(position[0])*cos(position[1]) - sin(position[2] + 1.57)*cos(position[0])*sin(position[1]),   - cos(position[2] + 1.57)*cos(position[0])*sin(position[1]) - sin(position[2] + 1.57)*cos(position[0])*cos(position[1]),  sin(position[0])],
         #                              [ sin(position[2] + 1.57)*( - sin(position[0])*sin(position[1])) + cos(position[2] + 1.57)*( cos(position[1])*sin(position[0])), cos(position[2] + 1.57)*( - sin(position[0])*sin(position[1])) - sin(position[2] + 1.57)*(cos(position[1])*sin(position[0])),      -cos(position[0])],
         #                              [                                      cos(position[2] + 1.57)*sin(position[1]) + sin(position[2] + 1.57)*cos(position[1]),                                       cos(position[2] + 1.57)*cos(position[1]) - sin(position[2] + 1.57)*sin(position[1]),                 0]])
@@ -107,30 +104,31 @@ class EnviromentDynamics():
         #                              [sin(position[2] + 1.57) * (sin(position[1]) * (0.707) + 0.707 * sin(position[0] + 1.57) * cos(position[1])) - cos(position[2] + 1.57) * (cos(position[1]) * (0.707) - 0.707 * sin(position[0] + 1.57) * sin(position[1])), 0.707 * sin(position[0] + 1.57) * cos(position[1]) - 0.707 * cos(position[0] + 1.57) - 0.707 * sin(position[0] + 1.57) * sin(position[1]), -cos(position[2] + 1.57) * (sin(position[1]) * (0.707) + 0.707 * sin(position[0] + 1.57) * cos(position[1])) - sin(position[2] + 1.57) * (cos(position[1]) * (0.707) - 0.707 * sin(position[0] + 1.57) * sin(position[1]))]
         #                              ])
 
-        q0 = position[0]
-        q1 = position[1]
-        q2 = position[2]
-        rotation_matrix = np.matrix([
-                                    [ -cos(q2 + 1.57)*cos(q0 + 1.57)*sin(q1) - sin(q2 + 1.57)*cos(q0 + 1.57)*cos(q1),\
-
-                                    - sin(q0 + 1.57),\
-
-                                    cos(q2 + 1.57)*cos(q0 + 1.57)*cos(q1) - sin(q2 + 1.57)*cos(q0 + 1.57)*sin(q1)],\
-
-                                    [ -0.707*cos(q2 + 1.57)*(cos(q1) + sin(q0 + 1.57)*sin(q1)) + 0.707*sin(q2 + 1.57)*(sin(q1) - sin(q0 + 1.57)*cos(q1)),\
-
-                                    0.707*cos(q0 + 1.57), \
-
-                                    -0.707*cos(q2 + 1.57)*(sin(q1) - sin(q0 + 1.57)*cos(q1)) + -0.707*sin(q2 + 1.57)*(cos(q1) + sin(q0 + 1.57)*sin(q1))],\
-
-                                    [0.707*sin(q2 + 1.57)*(sin(q1) + sin(q0 + 1.57)*cos(q1)) - 0.707*cos(q2 + 1.57)*(cos(q1) - sin(q0 + 1.57)*sin(q1)),\
-
-                                    0.707*sin(q0 + 1.57)*cos(q1) - 0.707*cos(q0 + 1.57),\
-
-                                    -0.707*cos(q2 + 1.57)*(sin(q1) + sin(q0 + 1.57)*cos(q1)) - 0.707*sin(q2 + 1.57)*(cos(q1) - sin(q0 + 1.57)*sin(q1))] \
-
-                                    ])
-
-        rotation_matrix=np.transpose(rotation_matrix)
-
+        # q0 = position[0]
+        # q1 = position[1]#-math.pi*0.25
+        # q2 = position[2]
+        # rotation_matrix = np.matrix([
+        #                             [ -cos(q2 + 1.57)*cos(q0 + 1.57)*sin(q1) - sin(q2 + 1.57)*cos(q0 + 1.57)*cos(q1),\
+        #
+        #                             - sin(q0 + 1.57),\
+        #
+        #                             cos(q2 + 1.57)*cos(q0 + 1.57)*cos(q1) - sin(q2 + 1.57)*cos(q0 + 1.57)*sin(q1)],\
+        #
+        #                             [ -0.707*cos(q2 + 1.57)*(cos(q1) + sin(q0 + 1.57)*sin(q1)) + 0.707*sin(q2 + 1.57)*(sin(q1) - sin(q0 + 1.57)*cos(q1)),\
+        #
+        #                             0.707*cos(q0 + 1.57), \
+        #
+        #                             -0.707*cos(q2 + 1.57)*(sin(q1) - sin(q0 + 1.57)*cos(q1)) + -0.707*sin(q2 + 1.57)*(cos(q1) + sin(q0 + 1.57)*sin(q1))],\
+        #
+        #                             [0.707*sin(q2 + 1.57)*(sin(q1) + sin(q0 + 1.57)*cos(q1)) - 0.707*cos(q2 + 1.57)*(cos(q1) - sin(q0 + 1.57)*sin(q1)),\
+        #
+        #                             0.707*sin(q0 + 1.57)*cos(q1) - 0.707*cos(q0 + 1.57),\
+        #
+        #                             -0.707*cos(q2 + 1.57)*(sin(q1) + sin(q0 + 1.57)*cos(q1)) - 0.707*sin(q2 + 1.57)*(cos(q1) - sin(q0 + 1.57)*sin(q1))] \
+        #
+        #                             ])
+        #
+        # rotation_matrix=np.transpose(rotation_matrix)
+        rotation_matrix = rotation_matrix[0:3,0:3]
+        #print rotation_matrix
         return rotation_matrix

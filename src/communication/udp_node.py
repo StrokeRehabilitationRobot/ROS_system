@@ -64,6 +64,7 @@ def torque_callback(force):
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
     tau = np.array(J).dot(np.array(F).reshape(3, 1))
+
     for i in tau:
         if i == 0:
             motor.append(0)
