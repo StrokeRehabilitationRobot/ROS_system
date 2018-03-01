@@ -30,7 +30,7 @@ class HapticController():
         d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + maze_helper.BLOCKSIZE_X
         self.odom_list = tf.TransformListener()
         self.controller = PDController.PDController(K,B)
-        self.environment =  EnviromentDynamics.EnviromentDynamics(0.07,1,0.001,0.001,d_obs,d_goal)
+        self.environment =  EnviromentDynamics.EnviromentDynamics(0.25,1,0.001,0.001,d_obs,d_goal)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
         self.mass = 1
         self.time0 = time.clock()

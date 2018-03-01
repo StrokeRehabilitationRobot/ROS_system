@@ -192,17 +192,21 @@ def get_jacobian_matricies(joints):
                     [0,0,0],
                     [0,0,0]])
 
-    j2 = np.matrix([[-l[2] * c(theta_2 + theta_3) * s(theta_1), - l[1] * s(theta_2) - l[2] * s(theta_2 + theta_3) * c(theta_1), -l[2] * s(theta_2 + theta_3) * c(theta_1)],
-                    [l[2] * c(theta_2 + theta_3) * c(theta_1), - l[1] * s(theta_2) - l[2] * s(theta_2 + theta_3) * s(theta_1), -l[2] * s(theta_2 + theta_3) * s(theta_1)],
-                    [0, l[2] * c(theta_2 + theta_3) + l[1] * c(theta_2), l[2] * c(theta_2 + theta_3)],
-                    [0,0,0],
-                    [0,0,0],
-                    [0,0,0]])
+    j_a = np.matrix([[- 0.21*c(theta_1)*c(theta_2) - 0.16*c(theta_3 + 1.57)*(c(theta_1)*c(theta_2)) + 0.16*s(theta_3 + 1.57)*(c(theta_1)*s(theta_2)),\
+					    0.21*s(theta_1)*s(theta_2) - 0.16*c(theta_3 + 1.57)*(-s(theta_1)*s(theta_2)) + 0.16*s(theta_3 + 1.57)*(c(theta_2)*s(theta_1)),\
+					    0.16*s(theta_3 + 1.57)*(c(theta_2)*s(theta_1)) - 0.16*c(theta_3 + 1.57)*(-s(theta_1)*s(theta_2))],
+				    [- 0.148*c(theta_2)*s(theta_1) - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_2)*s(theta_1)) - 0.16*s(theta_3 + 1.57)*(-0.707*s(theta_1)*s(theta_2)),\
+				     - 0.148*c(theta_1)*s(theta_2) - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(0.707)) - 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(0.707)) - 0.21*c(theta_2)*(0.707),\
+				     - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(0.707)) - 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(0.707))],
+				    [0.148*c(theta_2)*s(theta_1) + 0.16*c(theta_3 + 1.57)*(0.707*c(theta_2)*s(theta_1)) + 0.16*s(theta_3 + 1.57)*(-0.707*s(theta_1)*s(theta_2)),\
+				     0.148*c(theta_1)*s(theta_2) + 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(- 0.707)) + 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(- 0.707)) + 0.21*c(theta_2)*(- 0.707),\
+				     0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(-0.707)) + 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(- 0.707))]])
+
 
     #print "j2", j2
     #print "j1", j
 
-    return (J_1, J_2, j2)
+    return (J_1, J_2, j_a)
 
 
 def fk(joints):
@@ -300,6 +304,6 @@ def get_J_tranpose(joints):
     """
 
     J1, J2, J3 = get_jacobian_matricies(joints)
-    J = J3[0:3, 0:3]
+   
 
-    return np.transpose(J)
+    return np.transpose(J3)

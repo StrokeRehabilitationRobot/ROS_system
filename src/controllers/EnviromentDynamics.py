@@ -61,30 +61,30 @@ class EnviromentDynamics():
         (position, _v, _e) = tools.helper.call_return_joint_states()
         rot_mat = self.rotation_matrix()
 
-        # if abs(f_x) < 0.25:
-        #     f_x = 0
-        # if abs(f_y) < 0.25:
-        #     f_y = 0
+        if abs(f_x) < abs(f_y):
+            f_x = 0
+        else:
+            f_y = 0
 
-        #print "Base frame motions: x(left): %.2f, z(up): %.2f" %(-round(f_x,1), -round(f_y, 1))
+        print "Base frame motions: x(left): %.2f, z(up): %.2f" %(-round(f_x,1), round(f_y, 1))
         base_force = WrenchStamped()
         base_force.header.frame_id = "base_link"
-        base_force.wrench.force.x = 0
-        base_force.wrench.force.y = round(f_x, 1)
-        base_force.wrench.force.z = -round(f_y, 1)
+        base_force.wrench.force.x = -round(f_x, 1)
+        base_force.wrench.force.y = 0
+        base_force.wrench.force.z = round(f_y, 1)
         self.pub_base.publish(base_force)
-        f_tip = np.dot(np.array(rot_mat), [0, round(f_x, 1), -round(f_y, 1)]).reshape(3, 1)
+        f_tip = [-round(f_x, 1), 0, round(f_y, 1)]
         #f_tip = np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3, 1)
-        tip_force = WrenchStamped()
-        tip_force.header.frame_id = "master_EE"
-        tip_force.wrench.force.x = 0#f_tip[0]
-        tip_force.wrench.force.y = 0#f_tip[1]
-        tip_force.wrench.force.z = 1#f_tip[2]
-        self.pub_tip.publish(tip_force)
+        # tip_force = WrenchStamped()
+        # tip_force.header.frame_id = "master_EE"
+        # tip_force.wrench.force.x = 0#f_tip[0]
+        # tip_force.wrench.force.y = 0#f_tip[1]
+        # tip_force.wrench.force.z = 1#f_tip[2]
+        # self.pub_tip.publish(tip_force)
 
         #print "(tip_x, tip_y, tip_z) = (%.1f, %.1f, %.1f)" %(f_tip[0], f_tip[1], f_tip[2])
 
-        f_tip = [0,0,1]#[f_tip[0], f_tip[1], f_tip[2]]
+        #f_tip = [0,0,1]#[f_tip[0], f_tip[1], f_tip[2]]
         return f_tip
 
     def rotation_matrix(self):
