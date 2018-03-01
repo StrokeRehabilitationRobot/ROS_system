@@ -61,10 +61,10 @@ class EnviromentDynamics():
         (position, _v, _e) = tools.helper.call_return_joint_states()
         rot_mat = self.rotation_matrix()
 
-        if abs(f_x) < 0.25:
-            f_x = 0
-        if abs(f_y) < 0.25:
-            f_y = 0
+        # if abs(f_x) < 0.25:
+        #     f_x = 0
+        # if abs(f_y) < 0.25:
+        #     f_y = 0
 
         #print "Base frame motions: x(left): %.2f, z(up): %.2f" %(-round(f_x,1), -round(f_y, 1))
         base_force = WrenchStamped()
@@ -77,14 +77,14 @@ class EnviromentDynamics():
         #f_tip = np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3, 1)
         tip_force = WrenchStamped()
         tip_force.header.frame_id = "master_EE"
-        tip_force.wrench.force.x = f_tip[0]
-        tip_force.wrench.force.y = f_tip[1]
-        tip_force.wrench.force.z = f_tip[2]
+        tip_force.wrench.force.x = 0#f_tip[0]
+        tip_force.wrench.force.y = 0#f_tip[1]
+        tip_force.wrench.force.z = 1#f_tip[2]
         self.pub_tip.publish(tip_force)
 
         #print "(tip_x, tip_y, tip_z) = (%.1f, %.1f, %.1f)" %(f_tip[0], f_tip[1], f_tip[2])
 
-        f_tip = [f_tip[0], f_tip[1], f_tip[2]]
+        f_tip = [0,0,1]#[f_tip[0], f_tip[1], f_tip[2]]
         return f_tip
 
     def rotation_matrix(self):
