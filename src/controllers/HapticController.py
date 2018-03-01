@@ -46,8 +46,7 @@ class HapticController():
         F = self.calc_arm_input()
         #add environmental pub_forces
         F_env = self.environment.make_force(haptic)
-        #print F_env
-        self.move(F)
+        self.move(np.add(F_env, F))
         F_plane = self.calc_plane_forces()
 
         #output forces to arm

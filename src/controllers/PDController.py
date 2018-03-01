@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class PDController():
 
@@ -8,7 +8,7 @@ class PDController():
 
     def get_F(self,e,ed):
         F = self.K.dot(e) + self.B.dot(ed)
-        return F
+        return np.asarray(F)
 
     def set_K(self,K):
         self.K = K

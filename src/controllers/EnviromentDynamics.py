@@ -61,11 +61,6 @@ class EnviromentDynamics():
         (position, _v, _e) = tools.helper.call_return_joint_states()
         rot_mat = self.rotation_matrix()
 
-        if abs(f_x) < abs(f_y):
-            f_x = 0
-        else:
-            f_y = 0
-
         print "Base frame motions: x(left): %.2f, z(up): %.2f" %(-round(f_x,1), round(f_y, 1))
         base_force = WrenchStamped()
         base_force.header.frame_id = "base_link"
@@ -73,7 +68,7 @@ class EnviromentDynamics():
         base_force.wrench.force.y = 0
         base_force.wrench.force.z = round(f_y, 1)
         self.pub_base.publish(base_force)
-        f_tip = [-round(f_x, 1), 0, round(f_y, 1)]
+        f_tip = np.asarray([[-round(f_x, 1)], [0], [round(f_y, 1)]])
         #f_tip = np.dot(np.array(rot_mat), [0, 1, 0]).reshape(3, 1)
         # tip_force = WrenchStamped()
         # tip_force.header.frame_id = "master_EE"

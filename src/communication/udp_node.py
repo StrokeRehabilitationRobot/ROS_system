@@ -31,7 +31,7 @@ def udp_callback(downstream):
         qd.append(round(tools.helper.encoder_to_angle(upstream[i * 3 + 1 + 1]), 2))
         tau.append(upstream[i * 3 + 2 + 1])
 
-    # q[2]+=0.5*math.pi
+    #q[2]+=0.5*math.pi
 
     state.position = q
     state.velocity = qd
@@ -64,14 +64,13 @@ def torque_callback(force):
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
     tau = np.array(J).dot(np.array(F).reshape(3, 1))
-    print "Force (x, y, z)", F
-    print "Joint States (q0,q1,q2)", position
+    tau = np.multiply(tau, np.asarray([[-1], [1], [1]]))
     for i in tau:
         if i == 0:
             motor.append(0)
         else:
             motor.append(1)
-    print "(Joint 0, Joint 1, Joint 2) = (%.2f, %.2f, %.2f)" %(tau[0], tau[1], tau[2])
+    print "Joint Torques (%.2f, %.2f, %.2f)" %(tau[0], tau[1], tau[2])
     packet = tools.helper.make_motor_packet(motor,tau,1,board)
 
     udp_callback(packet)
