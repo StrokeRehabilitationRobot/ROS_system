@@ -13,13 +13,17 @@ class FilterJoints():
         rospy.Subscriber('unfilter_joint_states', JointState, self.filter)
         self.robot_state = rospy.Publisher('joint_states', JointState, queue_size=1,latch=True)
         self.velocity = [MeanFilter.MeanFilter(50),MeanFilter.MeanFilter(50),MeanFilter.MeanFilter(50)]
+        self.position = [MeanFilter.MeanFilter(50),MeanFilter.MeanFilter(50),MeanFilter.MeanFilter(50)]
 
     def filter(self,msg):
         updated_vel = []
+        updated_pose = []
         for  vel, joint in enumerate(self.velocity):
             updated_vel.append(joint.update(msg.velocity[vel]))
+            updated_pose.append(joint.update(msg.position[vel]))
 
         msg.velocity = updated_vel
+        #msg.position = updated_pose
         self.robot_state.publish(msg)
 
 

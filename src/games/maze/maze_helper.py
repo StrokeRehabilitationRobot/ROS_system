@@ -131,16 +131,16 @@ def joint_to_game(x_range, y_range  ):
     #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
     return (EE_y,EE_x)
 
-def task_to_game(x_range, y_range):
+def task_to_game(x, y):
 
     #odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
     #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-    (position, velocity, effort) = tools.helper.call_return_joint_states()
-    (_,_,EE) = tools.dynamics.fk(position)
-    EE_y = tools.helper.remap(EE[1],-0.20,0.20,x_range[0],x_range[1] )
-    EE_x = tools.helper.remap(-EE[2],0.10,-0.15,y_range[0],y_range[1])
+    # (position, velocity, effort) = tools.helper.call_return_joint_states()
+    # (_,_,EE) = tools.dynamics.fk(position)
+    EE_x = tools.helper.remap(x,-0.20,0.20,0, windowWidth )
+    EE_y = tools.helper.remap(y,0.10,-0.15,0, windowHeight)
 
-    return (EE_y,EE_x)
+    return (EE_x,EE_y)
 
 def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
@@ -158,8 +158,6 @@ def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
-        #print "checking point: ", index_to_cell(maze, option[0], option[1])
-        #print "cell ID: ", check_cell(maze, index_to_cell(maze, option[0], option[1]))
         if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
             neighbors_out.append(option)
 

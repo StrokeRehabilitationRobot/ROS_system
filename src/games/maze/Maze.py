@@ -53,26 +53,25 @@ class Maze:
         self.running = False
         self.am_i_at_goal = False
         self.am_i_at_start = False
-        self.time0 = 0
+        self.time0 = time.clock()
         self.pose_old = (0,0)
         self.csv = open("/home/cibr-strokerehab/Documents/JointStatesRecording.csv", "w")
 
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
+        rospy.Subscriber('Player', Point, self.update_player)
         #rospy.Subscriber('joint_states', JointState, self.update_player)
         # rospy.Timer(rospy.Duration(0.01), self.update_player)
         # rospy.Timer(rospy.Duration(0.01), self.update_force)
         self.odom_list = tf.TransformListener()
-        self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_goal   = rospy.Publisher('at_goal', Bool, queue_size=1)
-        self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
 
 
-        player_thread = threading.Thread(target=self.update_player)
-        player_thread.daemon = True
-        player_thread.start()
+        # player_thread = threading.Thread(target=self.update_player)
+        # player_thread.daemon = True
+        # player_thread.start()
         #threading.Thread(target=self.update_GUI).start()
         force_thread = threading.Thread(target=self.update_force)
         force_thread.daemon = True
@@ -111,14 +110,10 @@ class Maze:
         Updaters, called on timmer callbacks
     """
 
-    def update_player(self):
+    def update_player(self, msg):
 
-        while 1:
-            (x, y) =  maze_helper.task_to_game( (0,maze_helper.windowWidth), (0,maze_helper.windowHeight) )
-            self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
-            v = self.get_velocity()
-            time.sleep(0.01)
-
+        (x, y) = maze_helper.task_to_game(msg.x, msg.y)
+        self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
 
     def update_force(self):
 
@@ -134,6 +129,7 @@ class Maze:
                 for wall_block in walls:
                     pygame.draw.rect(self.display_surf, maze_helper.GREEN , wall_block, 0)
                 msg.player = player_center
+                #msg.velocity = self.get_velocity()
                 msg.obstacles = centers
                 msg.goals = []
                 self.pub_enviroment.publish(msg)
@@ -231,9 +227,9 @@ class Maze:
 
         if self.am_i_at_start:
             self.update_score()
-            print "Score:", self.score
+            #print "Score:", self.score
 
-        pygame.draw.rect(self.display_surf, maze_helper.WHITE, self.player, 0)
+        pygame.draw.ellipse(self.display_surf, maze_helper.WHITE, self.player, 0)
 
     def maze_draw(self):
         """
@@ -248,15 +244,12 @@ class Maze:
         pygame.draw.rect(self.display_surf, maze_helper.BLUE, self.start_rec, 0)
 
     def get_velocity(self):
-        dt = 0.01#(time.time() - self.time0)
-        xd =  self.player.centerx - self.pose_old[0]
-        yd =  self.player.centery - self.pose_old[1]
-        v = (xd,yd)
-        self.pose_old = (self.player.centerx, self.player.centery)
-        v = (v[0]/dt,v[1]/dt)
-        self.time0 = time.time()
-        print "gane",v
-        return v
+        (position, velocity, effort) = tools.helper.call_return_joint_states()
+        (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
+        task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
+        vel = Twist()
+        vel.linear = [task_velocity[0],task_velocity[1],task_velocity[2] ]
+        return vel
 
     def at_start(self):
         """

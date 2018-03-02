@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 from math import sin as s
 from math import cos as c
 import math
 import numpy as np
 import Robot
 import helper
+import tf
+import rospy
 
 
 
@@ -80,8 +83,8 @@ def make_gravity_matrix(robot):
 
 
 def make_coriolis_matrix(robot):
-    """
-
+    """sin
+sin
     :param: robot
     :return: coriolis matrix
     """
@@ -108,7 +111,7 @@ def make_coriolis_matrix(robot):
                 m[2]*( l[1]*c(theta_2) + r[2]*c(theta_23) )*(l[1]*s(theta_2) +  r[2]*s(theta_23) )
 
 
-    gamma_112 = -l[1]*m[2]*r[2]*s(theta_3)
+    gamma_112 = -l[1]*m[2]*r[2]*s(thecta_3)
 
     gamma_121 = gamma_112
     gamma_122 = gamma_112
@@ -131,7 +134,6 @@ def make_coriolis_matrix(robot):
 
     return np.asmatrix(C)
 
-
 def get_jacobian_matricies(joints):
     """
 
@@ -151,21 +153,60 @@ def get_jacobian_matricies(joints):
     J_1[5,0] = 1
 
 
-    J_2 = np.matrix(  [ [-r[1] * c(theta_2), 0, 0],
-                        [  0,                              0,                0],
-                        [0, -r[1], 0],
-                        [  0,                             -1,                0],
-                        [  -s(theta_2),                    0,                0],
-                        [c(theta_2),                       0,                0] ] )
+    J_2 = np.matrix(  [ [-r[1] * c(theta_2),     0, 0],
+                        [                 0,     0, 0],
+                        [                 0, -r[1], 0],
+                        [                 0,    -1, 0],
+                        [       -s(theta_2),     0, 0],
+                        [        c(theta_2),     0, 0] ] )
 
     J_3 = np.matrix( [ [-l[2] * c(theta_2) - r[2] * c(theta_2 + theta_3), 0,                  0],
-                       [ 0, l[1] * s(theta_3),                                                0],
+                       [ 0,                           l[1] * s(theta_3),                      0],
                        [ 0,                   -r[2] - l[0] * c(theta_3),                  -r[2]],
                        [ 0,                                          -1,                    -1 ],
                        [-s(theta_2+theta_3),                          0,                     0 ],
                        [c(theta_2+theta_3),                           0,                     0 ] ])
 
-    return (J_1, J_2, J_3)
+
+
+    j = np.matrix( [[(l[2]*s(theta_1)*s(theta_1+theta_2))-(l[1]*s(theta_1)*c(theta_2)),((-1)*l[2]*c(theta_1)*c(theta_2+theta_3))-(l[1]*c(theta_1)*s(theta_1)), (-1*(c(theta_1))*l[2]*(s(theta_2 + theta_3)))],
+                    [(l[1]*c(theta_1)*c(theta_2))-(l[2]*c(theta_1)*s(theta_2+theta_3)),(-1*l[1]*s(theta_1)*s(theta_2))-(l[2]*s(theta_1)*c(theta_2+theta_3)), (l[2]*s(theta_2+theta_3))-(l[1]*c(theta_2))],
+                    [(-1*l[2]*c(theta_1)*c(theta_2+theta_3)),   ((-1)*l[2]*s(theta_1)*c(theta_2+theta_3)),                                                   l[2]*s(theta_2+theta_3)],
+                    [0,                                                                  (-1)*s(theta_1),                                                         (-1)*s(theta_1)],
+                    [0,                                                                  c(theta_1),                                                              c(theta_1)],
+                    [1 ,                                                                 0,                                                                        0]])
+
+
+    j2 = np.matrix([[ -l[2]*c(theta_2 + theta_3)*s(theta_1), - l[0]*s(theta_2) - l[2]*s(theta_2 + theta_3)*c(theta_1), -l[2]*s(theta_2 + theta_3)*c(theta_1)],
+                    [  l[2]*c(theta_2 + theta_3)*c(theta_1), - l[0]*s(theta_2) - l[2]*s(theta_2 + theta_3)*s(theta_1), -l[2]*s(theta_2 + theta_3)*s(theta_1)],
+                    [ 0,           l[2]*c(theta_2 + theta_3) + l[1]*c(theta_2),          l[2]*c(theta_2 + theta_3)],
+                    [0,0,0],
+                    [0,0,0],
+                    [0,0,0]])
+
+
+    j2 = np.matrix([[ -l[2]*c(theta_2 + theta_3)*s(theta_1), - l[0]*s(theta_2) - l[2]*s(theta_2 + theta_3)*c(theta_1), -l[2]*s(theta_2 + theta_3)*c(theta_1)],
+                    [  l[2]*c(theta_2 + theta_3)*c(theta_1), - l[0]*s(theta_2) - l[2]*s(theta_2 + theta_3)*s(theta_1), -l[2]*s(theta_2 + theta_3)*s(theta_1)],
+                    [ 0,           l[2]*c(theta_2 + theta_3) + l[1]*c(theta_2),          l[2]*c(theta_2 + theta_3)],
+                    [0,0,0],
+                    [0,0,0],
+                    [0,0,0]])
+
+    j_a = np.matrix([[- 0.21*c(theta_1)*c(theta_2) - 0.16*c(theta_3 + 1.57)*(c(theta_1)*c(theta_2)) + 0.16*s(theta_3 + 1.57)*(c(theta_1)*s(theta_2)),\
+					    0.21*s(theta_1)*s(theta_2) - 0.16*c(theta_3 + 1.57)*(-s(theta_1)*s(theta_2)) + 0.16*s(theta_3 + 1.57)*(c(theta_2)*s(theta_1)),\
+					    0.16*s(theta_3 + 1.57)*(c(theta_2)*s(theta_1)) - 0.16*c(theta_3 + 1.57)*(-s(theta_1)*s(theta_2))],
+				    [- 0.148*c(theta_2)*s(theta_1) - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_2)*s(theta_1)) - 0.16*s(theta_3 + 1.57)*(-0.707*s(theta_1)*s(theta_2)),\
+				     - 0.148*c(theta_1)*s(theta_2) - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(0.707)) - 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(0.707)) - 0.21*c(theta_2)*(0.707),\
+				     - 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(0.707)) - 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(0.707))],
+				    [0.148*c(theta_2)*s(theta_1) + 0.16*c(theta_3 + 1.57)*(0.707*c(theta_2)*s(theta_1)) + 0.16*s(theta_3 + 1.57)*(-0.707*s(theta_1)*s(theta_2)),\
+				     0.148*c(theta_1)*s(theta_2) + 0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(- 0.707)) + 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(- 0.707)) + 0.21*c(theta_2)*(- 0.707),\
+				     0.16*c(theta_3 + 1.57)*(0.707*c(theta_1)*s(theta_2) + c(theta_2)*(-0.707)) + 0.16*s(theta_3 + 1.57)*(0.707*c(theta_1)*c(theta_2) - s(theta_2)*(- 0.707))]])
+
+
+    #print "j2", j2
+    #print "j1", j
+
+    return (J_1, J_2, j_a)
 
 
 def fk(joints):
@@ -206,11 +247,10 @@ def ik(robot, pose):
     z = pose[2]
 
     theta_1 = math.atan2(y,z)
-    theta_3 = -math.acos( (x*x + y*y + (z- l[0])**2 -l[1]*l[1] - l[2]*l[2])/ ( 2*l[1]*l[2] )   ) - 0.5*math.pi
+    theta_3 = -math.ac( (x*x + y*y + (z- l[0])**2 -l[1]*l[1] - l[2]*l[2])/ ( 2*l[1]*l[2] )   ) - 0.5*math.pi
     theta_2 = math.atan2( z- l[0] , math.sqrt(x*x, y*y) ) - math.atan2( l[2]*s(theta_3), l[1] + l[2]*c(theta_3) )
 
     return (theta_1, theta_2, theta_3)
-
 
 def get_torque(robot):
     """
@@ -231,7 +271,7 @@ def get_torque(robot):
 
 
 def trajectory(q, qd, dt):
-    # TODO created docstring
+    # TODO created docstring•••••••••••
     """
 
     :param q: [start.end] of pose
@@ -257,13 +297,13 @@ def get_linear_vel(robot):
     return  J*qd
 
 def get_J_tranpose(joints):
-    """
+    """position
 
     :param robot:
     :return:
     """
 
     J1, J2, J3 = get_jacobian_matricies(joints)
-    J = J3[0:3, 0:3]
+   
 
-    return np.transpose(J)
+    return np.transpose(J3)
