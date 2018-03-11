@@ -113,7 +113,7 @@ class Maze:
     def update_player(self, msg):
 
         (x, y) = maze_helper.task_to_game(msg.x, msg.y)
-        self.player = pygame.Rect((x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+        self.player = pygame.Rect(x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y )
 
     def update_force(self):
 
@@ -124,10 +124,13 @@ class Maze:
                 player_center = Point()
                 player_center.x = self.player.centerx
                 player_center.y = self.player.centery
-                centers, walls = maze_helper.check_collision_adaptive(self.player,self.maze)
+                centers = maze_helper.collision_plane(self.maze,self.player)
 
-                for wall_block in walls:
-                    pygame.draw.rect(self.display_surf, maze_helper.GREEN , wall_block, 0)
+                for center in centers:
+                    x = center.x - 0.5*maze_helper.PLAYERSIZE_X
+                    y = center.y - 0.5*maze_helper.PLAYERSIZE_Y
+                    temp = pygame.Rect((x,y), (maze_helper.PLAYERSIZE_X,maze_helper.PLAYERSIZE_Y) )
+                    pygame.draw.rect(self.display_surf, maze_helper.GREEN , temp, 0)
                 msg.player = player_center
                 #msg.velocity = self.get_velocity()
                 msg.obstacles = centers

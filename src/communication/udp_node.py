@@ -70,7 +70,6 @@ def torque_callback(force):
             motor.append(0)
         else:
             motor.append(1)
-    print "Joint Torques (%.2f, %.2f, %.2f)" %(tau[0], tau[1], tau[2])
     packet = tools.helper.make_motor_packet(motor,tau,1,board)
 
     udp_callback(packet)

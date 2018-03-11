@@ -20,19 +20,20 @@ class HapticController():
     def __init__(self):
         """
         """
-        rospy.init_node("haptics")
+        rospy.init_node("models")
         rospy.Subscriber("haptic", hapticForce, self.make_forces)
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
-        K = 800* np.identity(3)
-        B = 50*np.identity(3)
+        self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
+        K = 650* np.identity(3)
+        B = 100*np.identity(3)
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X
         d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + maze_helper.BLOCKSIZE_X
         self.odom_list = tf.TransformListener()
         self.controller = PDController.PDController(K,B)
-        self.environment =  EnviromentDynamics.EnviromentDynamics(0.25,1,0.001,0.001,d_obs,d_goal)
+        self.environment =  EnviromentDynamics.EnviromentDynamics(10,1,1,0.001,d_obs,d_goal)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
-        self.mass = 1
+        self.mass = 10
         self.time0 = time.clock()
 
 
@@ -45,8 +46,11 @@ class HapticController():
         """
         F = self.calc_arm_input()
         #add environmental pub_forces
+        haptic.velocity.linear.x = self.state[3]
+        haptic.velocity.linear.y = self.state[4]
+        haptic.velocity.linear.z = self.state[5]
         F_env = self.environment.make_force(haptic)
-        self.move(np.add(F_env, F))
+        self.move(np.add(F_env, 0))
         F_plane = self.calc_plane_forces()
 
         #output forces to arm
@@ -61,7 +65,7 @@ class HapticController():
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
         (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
-        task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
+        task_velocity = -np.array(j3).dot(np.array(velocity).reshape(3, 1))
         e =  self.state[0:3]-np.array(task_position).reshape(3, 1)
         ed =  self.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
         F = self.controller.get_F(e,ed)

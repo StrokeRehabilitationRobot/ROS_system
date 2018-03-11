@@ -34,8 +34,8 @@ BLOCKSIZE_Y = 30
 PLAYERSIZE_X = 10
 PLAYERSIZE_Y = 10
 
-windowWidth = 1000
-windowHeight = 600
+windowWidth = 900
+windowHeight = 30*18
 
 def invert(self):
     for index, row in enumerate(self.maze):
@@ -137,8 +137,8 @@ def task_to_game(x, y):
     #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
     # (position, velocity, effort) = tools.helper.call_return_joint_states()
     # (_,_,EE) = tools.dynamics.fk(position)
-    EE_x = tools.helper.remap(x,-0.20,0.20,0, windowWidth )
-    EE_y = tools.helper.remap(y,0.10,-0.15,0, windowHeight)
+    EE_x = tools.helper.remap(x,-0.15,0.15,0, windowWidth )
+    EE_y = tools.helper.remap(y,0.40,0.15,0, windowHeight)
 
     return (EE_x,EE_y)
 
@@ -164,6 +164,71 @@ def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
     return neighbors_out
 
 
+def collision_plane(maze,player):
+
+
+    points = []
+    loc_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
+    loc_y = int(float(player.centery)/BLOCKSIZE_Y)
+    looking_for = [1]
+
+    option = (loc_x - 1, loc_y)
+
+    if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+        point = project( ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*option[1] ),( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1) ), (player.centerx,player.centery)  )
+        temp_point =  Point()
+
+        temp_point.x = point[0]
+        temp_point.y = point[1]
+        points.append(temp_point)
+
+    option = (loc_x , loc_y + 1)
+
+    if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+        point = project(( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]) ), ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]) ), player.center)
+        temp_point =  Point()
+        temp_point.x = point[0]
+        temp_point.y = point[1]
+        points.append(temp_point)
+
+    option = (loc_x + 1 , loc_y )
+
+    if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+        point = project(( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]+1) ), ( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]) ), player.center )
+        temp_point =  Point()
+        temp_point.x = point[0]
+        temp_point.y = point[1]
+        points.append(temp_point)
+
+    option = (loc_x , loc_y - 1)
+
+    if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
+        point = project( ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1) ), ( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1] + 1) ), player.center )
+        temp_point =  Point()
+        temp_point.x = point[0]
+        temp_point.y = point[1]
+        points.append(temp_point)
+
+    return points
+
+
+def project(v, w, p):
+
+    v_vec = np.asarray( v, dtype=float )
+    w_vec = np.asarray( w,dtype=float )
+    p_vec = np.asarray( p,dtype=float )
+
+    pv = p_vec - v_vec
+    wv = w_vec - v_vec
+
+    l = np.linalg.norm( wv )**2
+
+    t = max( 0, min(1, np.dot( pv,wv )/l  ) )
+
+    projection = v_vec + t*(wv)
+
+    return projection
+
 
 def check_collision_adaptive(player,maze):
 
@@ -171,12 +236,12 @@ def check_collision_adaptive(player,maze):
     centers = []
     player_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
     player_y = int(float(player.centery)/BLOCKSIZE_Y)
-    neighbor_walls = neighbors_euclidean(maze, player_x,player_y, [1])
+    neighbor_walls = neighbors_manhattan(maze, player_x,player_y, [1])
     for neighbor in neighbor_walls:
         point = Point()
         wall_block = pygame.Rect((neighbor[0] * BLOCKSIZE_X, neighbor[1] * BLOCKSIZE_Y, BLOCKSIZE_X, BLOCKSIZE_Y))
-        point.x = wall_block.centerx
-        point.y = wall_block.centery
+        point.x = wall_block.x
+        point.y = wall_block.y
         centers.append(point)
         walls.append(wall_block)
 
