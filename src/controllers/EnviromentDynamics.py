@@ -37,14 +37,15 @@ class EnviromentDynamics():
 
             print "obs",obs
             print "player",msg.player
-            d = math.sqrt((obs.x - msg.player.x)**2 +
-                          (obs.y - msg.player.y)**2)
+            d = math.sqrt((obs.x - msg.player.x)**2 + (obs.y - msg.player.y)**2)
             theta = math.atan2((obs.y - msg.player.y), (obs.x - msg.player.x))
-            F = self.k_obs * (max(self.d_obs - d, 0))
-            f_y += round(F * math.sin(theta), 2) + self.b_obs*(msg.velocity.linear.z)
-            f_x += round(F * math.cos(theta), 2) - self.b_obs*(msg.velocity.linear.x)
-        print "fx", f_x
-        print "fy", f_y
+            if (max(self.d_obs - d, 0)) != 0.0:
+                F = self.k_obs * (max(self.d_obs - d, 0))
+                f_y += round(F * math.sin(theta), 2) + self.b_obs*(msg.velocity.linear.z)
+                f_x += round(F * math.cos(theta), 2) + self.b_obs*(msg.velocity.linear.x)
+            print "d", d
+            print "velocity", msg.velocity.linear
+
         (position, _v, _e) = tools.helper.call_return_joint_states()
 
         base_force = WrenchStamped()
@@ -53,5 +54,10 @@ class EnviromentDynamics():
         base_force.wrench.force.y = 0
         base_force.wrench.force.z = round(f_y, 1)
         self.pub_base.publish(base_force)
-        f_tip = np.asarray([[-round(f_x, 1)], [0], [round(f_y, 1)]])
+        f_tip = np.asarray([[0], [-round(f_x, 1)], [round(f_y, 1)]])
+        #f_tip = np.asarray([[0], [0], [0]])
+
         return f_tip
+
+    def goal_force(self, msg):
+        pass

@@ -25,13 +25,13 @@ class HapticController():
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
-        K = 650* np.identity(3)
-        B = 100*np.identity(3)
+        K = 1850* np.identity(3)
+        B = 200*np.identity(3)
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X
-        d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + maze_helper.BLOCKSIZE_X
+        d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 0.5*maze_helper.BLOCKSIZE_X
         self.odom_list = tf.TransformListener()
+        self.environment =  EnviromentDynamics.EnviromentDynamics(10,5,0.2,0.001,d_obs,d_goal)
         self.controller = PDController.PDController(K,B)
-        self.environment =  EnviromentDynamics.EnviromentDynamics(10,1,1,0.001,d_obs,d_goal)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
         self.mass = 10
         self.time0 = time.clock()
@@ -50,13 +50,13 @@ class HapticController():
         haptic.velocity.linear.y = self.state[4]
         haptic.velocity.linear.z = self.state[5]
         F_env = self.environment.make_force(haptic)
-        self.move(np.add(F_env, 0))
+        self.move(np.add(F_env, F))
         F_plane = self.calc_plane_forces()
 
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = F_env
+        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = .2*F_env
         self.pub_forces.publish(output_force)
 
 
@@ -97,6 +97,10 @@ class HapticController():
         B[3,0] = dt
         B[4,1] = dt
         B[5,2] = dt
+
+        # B[0, 0] = dt
+        # B[1, 1] = dt
+        # B[2, 2] = dt
 
         A[0,3] = dt
         A[1,4] = dt

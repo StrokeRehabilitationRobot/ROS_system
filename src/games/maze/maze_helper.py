@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
 import sys
-import numpy as np
+import rospy
 from strokeRehabSystem.srv import ReturnJointStates
-from geometry_msgs.msg import Pose,Point, WrenchStamped
-from std_msgs.msg import Bool
 import rospy
 import pygame
 import time
-import math
 import tf
+import numpy as np
+from geometry_msgs.msg import Pose, Point, WrenchStamped
+import pygame
+import math
 import tools.joint_states_listener
 import tools.helper
-
 
 RED = (255,0,0)
 PEACH = (255,100,100)
@@ -28,14 +28,13 @@ MAGENTA = (100,0,100)
 WHITE = (255,255,255)
 BLACK = (0,0,0)
 
-# Map element sizes
 BLOCKSIZE_X = 30
 BLOCKSIZE_Y = 30
 PLAYERSIZE_X = 10
 PLAYERSIZE_Y = 10
 
-windowWidth = 900
-windowHeight = 30*18
+windowWidth = 30*BLOCKSIZE_X
+windowHeight = 18*BLOCKSIZE_Y
 
 def invert(self):
     for index, row in enumerate(self.maze):
@@ -54,17 +53,15 @@ def get_i_j(maze,index):
     :param index: index of 1D array
     :return: 2 ints of the the 2D array indexs
     """
-
     N = maze.info.width
-
     j = index/N
     i = index % N
-    return i,j
 
+    return i,j
 
 def check_cell(maze, pt):
     """
-    Check if a cell is a wall or the goal (1 = wall, 2 = goal, 0 = path)
+    Check if a cell is a wall or the goal (1 = wall or out of bounds, 2 = start, 3 = goal, 0 = path)
     :param maze:occupany grid message
     :param pt:index to check
     :return:what is at that index
@@ -72,14 +69,8 @@ def check_cell(maze, pt):
     N = maze.info.width
     M = maze.info.height
 
-
-    # If the cell in the maze array is a 1, the cell is a wall
-    #if maze.data[pt] == 1:
-        #return 1
-    # If the cell in the maze array is a 2, the cell is the starting position
     if maze.data[pt] == 2:
         return 2
-        # If the cell in the maze array is a 2, the cell is the starting position
     elif maze.data[pt] == 3:
         return 3
     elif maze.data[pt] == 0:
@@ -102,12 +93,8 @@ def getGoal(maze):
     :param maze: occupany grid message
     :return: 2D index of the goal location
     """
-
     goal = maze.data.index(3)
     return get_i_j(maze,goal)
-
-def construct_map(maze):
-    pass
 
 def index_to_cell(maze,x,y):
     """
@@ -126,19 +113,16 @@ def joint_to_game(x_range, y_range  ):
 
     (position, velocity, effort) = tools.helper.call_return_joint_states()
     # scales the input to the game
-    EE_y = tools.helper.remap(round(position[0],5),-0.6,0.6,x_range[0],x_range[1] )
+    EE_y = tools.helper.remap(round(position[0],5),-0.1,0.1,x_range[0],x_range[1] )
     EE_x = tools.helper.remap(round(position[2],5),0.6,1.9,y_range[0],y_range[1])
-    #EE_x = remap(position[1],-0.95,0.35,y_range[0],y_range[1])
     return (EE_y,EE_x)
 
 def task_to_game(x, y):
 
-    #odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
-    #(position, _ ) = odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-    # (position, velocity, effort) = tools.helper.call_return_joint_states()
-    # (_,_,EE) = tools.dynamics.fk(position)
-    EE_x = tools.helper.remap(x,-0.15,0.15,0, windowWidth )
-    EE_y = tools.helper.remap(y,0.40,0.15,0, windowHeight)
+    EE_x = tools.helper.remap(x,-0.10,0.10,0, windowWidth )
+    EE_x = max(0, min(EE_x, windowWidth))
+    EE_y = tools.helper.remap(y,0.36,0.21,0, windowHeight)
+    EE_y = max(0, min(EE_y, windowHeight))
 
     return (EE_x,EE_y)
 
@@ -146,6 +130,7 @@ def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
                     (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\
                     (loc_x - 1, loc_y + 1), (loc_x, loc_y + 1), (loc_x + 1, loc_y + 1)]
+
     neighbors_out = []
     for option in neighbors_in:
         if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
@@ -154,7 +139,6 @@ def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     return neighbors_out
 
 def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
-
     neighbors_in = [(loc_x - 1, loc_y), (loc_x, loc_y + 1), (loc_x + 1, loc_y), (loc_x, loc_y - 1)]
     neighbors_out = []
     for option in neighbors_in:
@@ -163,10 +147,14 @@ def neighbors_manhattan(maze,loc_x, loc_y, looking_for = [0,2,3]):
 
     return neighbors_out
 
-
 def collision_plane(maze,player):
-
-
+    """
+    Check for walls and obstacles in the player's vicinity. Looking for the closest points in the wall(s), so the
+    repulsive force is perpendicular to the wall
+    :param maze: Occupancy Grid
+    :param player: Rect
+    :return: points = array of Point() objects representing the closest point in the obstacles found
+    """
     points = []
     loc_x = int(float(player.centerx)/BLOCKSIZE_X) # This is the (x,y) block in the grid where the top left corner of the player is
     loc_y = int(float(player.centery)/BLOCKSIZE_Y)
@@ -175,45 +163,37 @@ def collision_plane(maze,player):
     option = (loc_x - 1, loc_y)
 
     if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
-        point = project( ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*option[1] ),( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1) ), (player.centerx,player.centery)  )
-        temp_point =  Point()
-
-        temp_point.x = point[0]
-        temp_point.y = point[1]
-        points.append(temp_point)
+        point = project( (BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*option[1]), (BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1)), player.center)
+        points.append(make_point(point[0], point[1]))
 
     option = (loc_x , loc_y + 1)
 
     if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
-        point = project(( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]) ), ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]) ), player.center)
-        temp_point =  Point()
-        temp_point.x = point[0]
-        temp_point.y = point[1]
-        points.append(temp_point)
+        point = project( (BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1])), (BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1])), player.center)
+        points.append(make_point(point[0], point[1]))
 
     option = (loc_x + 1 , loc_y )
 
     if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
-        point = project(( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]+1) ), ( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]) ), player.center )
-        temp_point =  Point()
-        temp_point.x = point[0]
-        temp_point.y = point[1]
-        points.append(temp_point)
+        point = project( (BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1]+1)), (BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1])), player.center)
+        points.append(make_point(point[0], point[1]))
 
     option = (loc_x , loc_y - 1)
 
     if check_cell(maze, index_to_cell(maze, option[0], option[1])) in looking_for:
-        point = project( ( BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1) ), ( BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1] + 1) ), player.center )
-        temp_point =  Point()
-        temp_point.x = point[0]
-        temp_point.y = point[1]
-        points.append(temp_point)
+        point = project( (BLOCKSIZE_X*(option[0]+1), BLOCKSIZE_Y*(option[1]+1)), (BLOCKSIZE_X*(option[0]), BLOCKSIZE_Y*(option[1] + 1)), player.center)
+        points.append(make_point(point[0], point[1]))
 
     return points
 
-
 def project(v, w, p):
-
+    """
+    "Project the player's "shadow" on the nearby walls.
+    :param v: 1 of two nearest corners of a wall block to the player
+    :param w: 1 of two nearest corners of a wall block to the player
+    :param p: player location
+    :return: projection = closest point on line segment between v and w to player p
+    """
     v_vec = np.asarray( v, dtype=float )
     w_vec = np.asarray( w,dtype=float )
     p_vec = np.asarray( p,dtype=float )
@@ -222,9 +202,7 @@ def project(v, w, p):
     wv = w_vec - v_vec
 
     l = np.linalg.norm( wv )**2
-
-    t = max( 0, min(1, np.dot( pv,wv )/l  ) )
-
+    t = max( 0, min(1, np.dot(pv,wv)/l) )
     projection = v_vec + t*(wv)
 
     return projection
@@ -244,7 +222,6 @@ def check_collision_adaptive(player,maze):
         point.y = wall_block.y
         centers.append(point)
         walls.append(wall_block)
-
 
     return centers,walls
 
@@ -267,3 +244,10 @@ def goal_adaptive(start,goal,path):
     points.append(goal)
 
     return points
+
+def make_point(x, y):
+    point = Point()
+    point.x = x
+    point.y = y
+
+    return point
