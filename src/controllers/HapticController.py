@@ -34,7 +34,7 @@ class HapticController():
 
         self.odom_list = tf.TransformListener()
         self.player = PlayerModel.PlayerModel(self.mass)
-        self.environment =  EnviromentDynamics.EnviromentDynamics(10,5,10,0.001,d_obs,d_goal)
+        self.environment =  EnviromentDynamics.EnviromentDynamics(10,10,d_obs)
         self.controller = PDController.PDController(K,B)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
 
@@ -61,9 +61,8 @@ class HapticController():
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = .2*F_env
+        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.01*F_env
         self.pub_forces.publish(output_force)
-
 
     def calc_arm_input(self):
         (position, velocity, _) = tools.helper.call_return_joint_states()

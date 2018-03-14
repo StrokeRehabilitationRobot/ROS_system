@@ -14,16 +14,12 @@ import tf
 
 class EnviromentDynamics():
 
-    def __init__(self, k_obs, k_goal, b_obs, b_goal, d_obs, d_goal, goal_angle=math.pi / 3.0):
+    def __init__(self, k_obs, b_obs, d_obs):
         """
         """
         self.k_obs = -k_obs
-        self.k_goal = k_goal
         self.b_obs = b_obs
-        self.b_goal = -b_goal
         self.d_obs = d_obs
-        self.d_goal = d_goal
-        self.goal_angle = goal_angle
         self.odom_list = tf.TransformListener()
         self.pub_base = rospy.Publisher('base_force', WrenchStamped, queue_size=1)
         self.pub_tip = rospy.Publisher('tip_force', WrenchStamped, queue_size=1)
