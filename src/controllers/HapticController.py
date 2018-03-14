@@ -9,7 +9,7 @@ import PlayerModel
 import tf
 import numpy as np
 import PDController
-import EnviromentDynamics
+import WallForces
 import tools.helper
 import tools.dynamics
 import games.maze.maze_helper as maze_helper
@@ -34,7 +34,7 @@ class HapticController():
 
         self.odom_list = tf.TransformListener()
         self.player = PlayerModel.PlayerModel(self.mass)
-        self.environment =  EnviromentDynamics.EnviromentDynamics(10,10,d_obs)
+        self.environment =  WallForces.WallForces(10, 10, d_obs)
         self.controller = PDController.PDController(K,B)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
 

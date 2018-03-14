@@ -12,7 +12,7 @@ import tools.dynamics
 import tf
 
 
-class EnviromentDynamics():
+class WallForces():
 
     def __init__(self, k_obs, b_obs, d_obs):
         """
