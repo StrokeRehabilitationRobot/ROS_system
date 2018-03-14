@@ -21,7 +21,7 @@ class PlayerModel():
         pusblish the new position
         """
         dt = time.clock() - self.time0
-        F = [F.wrench.force.x, F.wrench.force.y, F.wrench.force.z]
+        #F = [F.wrench.force.x, F.wrench.force.y, F.wrench.force.z]
         xdd = -np.array(F).reshape(3, 1)/self.mass
         B = np.zeros(shape=(6,3))
         A = np.identity(6)

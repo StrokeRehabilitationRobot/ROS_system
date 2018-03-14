@@ -5,6 +5,7 @@ import rospy
 from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 import math
+import PlayerModel
 import tf
 import numpy as np
 import PDController
@@ -25,15 +26,18 @@ class HapticController():
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
+        self.mass = 10
         K = 1850* np.identity(3)
         B = 200*np.identity(3)
-        d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 1.5*maze_helper.BLOCKSIZE_X
-        d_obs = 0.5*maze_helper.BLOCKSIZE_X + 0.5*maze_helper.PLAYERSIZE_X + 0.5*maze_helper.BLOCKSIZE_X
+        d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 1.50*maze_helper.BLOCKSIZE_X
+        d_obs  = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
+
         self.odom_list = tf.TransformListener()
-        self.environment =  EnviromentDynamics.EnviromentDynamics(10,5,0.2,0.001,d_obs,d_goal)
+        self.player = PlayerModel.PlayerModel(self.mass)
+        self.environment =  EnviromentDynamics.EnviromentDynamics(10,5,10,0.001,d_obs,d_goal)
         self.controller = PDController.PDController(K,B)
         self.state = np.array([[0],[0],[0],[0],[0],[0]])
-        self.mass = 10
+
         self.time0 = time.clock()
 
 
@@ -50,7 +54,8 @@ class HapticController():
         haptic.velocity.linear.y = self.state[4]
         haptic.velocity.linear.z = self.state[5]
         F_env = self.environment.make_force(haptic)
-        self.move(np.add(F_env, F))
+        self.player.move(np.add(F_env, F))
+        #self.move(np.add(F_env, F))
         F_plane = self.calc_plane_forces()
 
         #output forces to arm
@@ -66,10 +71,10 @@ class HapticController():
         (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
         task_velocity = -np.array(j3).dot(np.array(velocity).reshape(3, 1))
-        e =  self.state[0:3]-np.array(task_position).reshape(3, 1)
-        ed =  self.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
-        F = self.controller.get_F(e,ed)
-        F = np.round(F,2)
+        e  = self.player.state[0:3]-np.array(task_position).reshape(3, 1)
+        ed = self.player.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
+        F  = self.controller.get_F(e,ed)
+        F  = np.round(F,2)
         return F
 
     def calc_plane_forces(self):
@@ -78,43 +83,11 @@ class HapticController():
         (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
         task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
-        e =  self.state[0:3]-np.array(task_position).reshape(3, 1)
-        ed =  self.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
-        F = self.controller.get_F(e,ed)
-        F = np.round(F,2)
+        e  = self.player.state[0:3]-np.array(task_position).reshape(3, 1)
+        ed = self.player.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
+        F  = self.controller.get_F(e,ed)
+        F  = np.round(F,2)
         return F
-
-    def move(self, F):
-        """
-        does the position update of a 2nd order system
-        pusblish the new position
-        """
-        dt = time.clock() - self.time0
-        xdd = -np.array(F).reshape(3, 1)/self.mass
-        B = np.zeros(shape=(6,3))
-        A = np.identity(6)
-
-        B[3,0] = dt
-        B[4,1] = dt
-        B[5,2] = dt
-
-        # B[0, 0] = dt
-        # B[1, 1] = dt
-        # B[2, 2] = dt
-
-        A[0,3] = dt
-        A[1,4] = dt
-        A[2,5] = dt
-
-        self.state = np.dot(A,self.state) + np.dot(B,xdd)
-        self.time0 = time.clock()
-        player = Point()
-        player.x = self.state[1]
-        player.y = self.state[2]
-        player.z = self.state[0]
-        self.pub_player.publish(player)
-
-        #print self.state
 
 if __name__ == '__main__':
     haptic = HapticController()
