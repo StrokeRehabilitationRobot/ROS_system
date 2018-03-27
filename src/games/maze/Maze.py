@@ -98,20 +98,25 @@ class Maze:
         :return:
         """
         while 1:
+
             msg = hapticForce()
             if self.running:
 
                 player_center = maze_helper.rec_to_point(self.player)
                 centers = maze_helper.collision_plane(self.maze,self.player)
+                task_coor = []
+
                 for center in centers:
+                    pt = Point()
                     x = center.x - 0.5*maze_helper.PLAYERSIZE_X
                     y = center.y - 0.5*maze_helper.PLAYERSIZE_Y
+                    (pt.x,pt.y) = maze_helper.game_to_task(x,y)
+                    task_coor.append(pt)
                     temp = pygame.Rect((x,y), (maze_helper.PLAYERSIZE_X,maze_helper.PLAYERSIZE_Y) )
                     pygame.draw.rect(self.display_surf, maze_helper.GREEN , temp, 0)
-                msg.player = player_center
-                msg.obstacles = centers
+
+                msg.obstacles = task_coor
                 #msg.goals = maze_helper.goal_adaptive(self.start_rec,self.goal_rec,self.path_draw)
-                #msg.velocity = self.get_velocity()
                 self.pub_enviroment.publish(msg)
                 pygame.display.update()
 
@@ -124,11 +129,13 @@ class Maze:
         :return:
         """
         if self.running:
+
             #AVQuestion could we speed this up by only drawing the blocks around the player's position?
             self.display_surf.fill((0, 0, 0))
             self.maze_draw()
             self.path_draw()
             self.player_draw()
+
             if self.am_i_at_start:
                 # Checking to see if maze has been completed, and continues timer
                 self.am_i_at_goal = self.at_goal()

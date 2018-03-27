@@ -127,6 +127,16 @@ def task_to_game(x, y):
 
     return (EE_x,EE_y)
 
+def game_to_task(x, y):
+
+    game_x = tools.helper.remap(x, 0, windowWidth, -0.10, 0.10 )
+    #EE_x = max(0, min(EE_x+BLOCKSIZE_X, windowWidth-BLOCKSIZE_X))
+
+    game_y = tools.helper.remap(y, 0, windowHeight,-0.08, -0.21 )
+    #EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
+
+    return (game_x,game_y)
+
 def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
                     (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\
@@ -230,16 +240,19 @@ def check_collision_adaptive(player,maze):
 def goal_adaptive(start,goal,path):
 
     points = []
-    goal = maze_helper.rec_to_point(goal)
-    start = maze_helper.rec_to_point(start)
+    goal = rec_to_point(goal)
+    start = rec_to_point(start)
     points.append(goal)
     points.append(start)
 
     if path:
+
         for rec in path:
+
             pt = Point()
-            pt.x = (rec.centerx * maze_helper.BLOCKSIZE_X) + math.floor(abs((maze_helper.BLOCKSIZE_X - maze_helper.PLAYERSIZE_X) * 0.5))
-            pt.y = (rec.centery * maze_helper.BLOCKSIZE_Y) + math.floor(abs((maze_helper.BLOCKSIZE_Y - maze_helper.PLAYERSIZE_Y) * 0.5))
+            x = (rec.centerx * BLOCKSIZE_X) + math.floor(abs((BLOCKSIZE_X - PLAYERSIZE_X) * 0.5))
+            y = (rec.centery * BLOCKSIZE_Y) + math.floor(abs((BLOCKSIZE_Y - PLAYERSIZE_Y) * 0.5))
+            (pt.x,pt.y) = game_to_task(x,y)
             points.append(pt)
 
     points.append(goal)
