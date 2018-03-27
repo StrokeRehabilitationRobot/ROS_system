@@ -120,9 +120,10 @@ def joint_to_game(x_range, y_range  ):
 def task_to_game(x, y):
 
     EE_x = tools.helper.remap(x,-0.10,0.10,0, windowWidth )
-    EE_x = max(0, min(EE_x, windowWidth))
-    EE_y = tools.helper.remap(y,0.36,0.21,0, windowHeight)
-    EE_y = max(0, min(EE_y, windowHeight))
+    EE_x = max(0, min(EE_x+BLOCKSIZE_X, windowWidth-BLOCKSIZE_X))
+
+    EE_y = tools.helper.remap(y,-0.08,-0.21,0, windowHeight)
+    EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
 
     return (EE_x,EE_y)
 

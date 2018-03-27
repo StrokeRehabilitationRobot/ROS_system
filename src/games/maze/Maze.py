@@ -60,7 +60,7 @@ class Maze:
         pygame.init()
         pygame.font.init()
 
-        # self.myfont = pygame.font.SysFont('Comic Sans MS', 18)
+
 
     def on_init(self):
         """
@@ -138,10 +138,11 @@ class Maze:
                 self.am_i_at_start = self.at_start()
                 elapsed_time = 0
 
-
-            # scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, elapsed_time)
-            # textsurface = self.myfont.render(scoretext, False, maze_helper.WHITE)
-            # self.display_surf.blit(textsurface, (0,0))
+            self.update_score()
+            scoretext = "Current Score: %d, Time Elapsed: %d s" %(self.score, elapsed_time)
+            self.myfont = pygame.font.SysFont('Comic Sans MS', 18)
+            textsurface = self.myfont.render(scoretext, False, maze_helper.WHITE)
+            self.display_surf.blit(textsurface, (0,0))
             pygame.display.update()
 
 
@@ -254,21 +255,21 @@ class Maze:
         return state.data
 
 
-    def update_score(self, assistance=3): pass
-    #
-    #     player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
-    #     player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)
-    #     point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
-    #     if maze_helper.check_cell(self.maze, int(point_index)) == 1:
-    #         self.score -= 1
-    #     for rec in self.solved_path:
-    #         if rec.centerx == player_x and rec.centery == player_y:
-    #             #print "On track"
-    #             reward = math.floor(1./len(self.solved_path) * 100)
-    #             self.score += reward
-    #         # else:
-    #         #     print "Player (x,y):", player_x, player_y
-    #         #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
+    def update_score(self, assistance=3):
+
+        player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
+        player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)
+        point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
+        if maze_helper.check_cell(self.maze, int(point_index)) == 1:
+            self.score -= 1
+        for rec in self.solved_path:
+            if rec.centerx == player_x and rec.centery == player_y:
+                #print "On track"
+                reward = math.floor(1./len(self.solved_path) * 100)
+                self.score += reward
+            # else:
+            #     print "Player (x,y):", player_x, player_y
+            #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
 
 
 if __name__ == "__main__":

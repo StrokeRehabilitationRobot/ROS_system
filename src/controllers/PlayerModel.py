@@ -10,7 +10,7 @@ class PlayerModel():
 
     def __init__(self,mass):
         self.mass = mass
-        self.state = np.array([[0], [0], [0], [0], [0], [0]])
+        self.state  = np.array([[0], [0], [0], [0], [0], [0]])
         self.time0 = time.clock()
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
 

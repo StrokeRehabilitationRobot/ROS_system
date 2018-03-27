@@ -15,7 +15,6 @@ import tools.dynamics
 import games.maze.maze_helper as maze_helper
 import time
 
-
 class HapticController():
 
     def __init__(self):
@@ -26,6 +25,7 @@ class HapticController():
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
+
         self.mass = 10
         K = 1850* np.identity(3)
         B = 200*np.identity(3)
@@ -34,10 +34,12 @@ class HapticController():
 
         self.odom_list = tf.TransformListener()
         self.player = PlayerModel.PlayerModel(self.mass)
+
+        self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
+        (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        self.player.state = np.array([[task_position[0]], [task_position[1]], [task_position[2]], [0], [0], [0]])
         self.environment =  WallForces.WallForces(10, 10, d_obs)
         self.controller = PDController.PDController(K,B)
-        self.state = np.array([[0],[0],[0],[0],[0],[0]])
-
         self.time0 = time.clock()
 
 
@@ -49,10 +51,12 @@ class HapticController():
         computers the forces
         """
         F = self.calc_arm_input()
+
         #add environmental pub_forces
-        haptic.velocity.linear.x = self.state[3]
-        haptic.velocity.linear.y = self.state[4]
-        haptic.velocity.linear.z = self.state[5]
+        haptic.player.z = self.player.state[0]
+        haptic.velocity.linear.x = self.player.state[3]
+        haptic.velocity.linear.y = self.player.state[4]
+        haptic.velocity.linear.z = self.player.state[5]
         F_env = self.environment.make_force(haptic)
         self.player.move(np.add(F_env, F))
         #self.move(np.add(F_env, F))
@@ -61,7 +65,7 @@ class HapticController():
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.01*F_env
+        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.005*F_env
         self.pub_forces.publish(output_force)
 
     def calc_arm_input(self):

@@ -65,6 +65,9 @@ def torque_callback(force):
     J = tools.dynamics.get_J_tranpose(position)
     tau = np.array(J).dot(np.array(F).reshape(3, 1))
     tau = np.multiply(tau, np.asarray([[-1], [1], [1]]))
+    
+    print "forces going to joints", tau
+
     for i in tau:
         if i == 0:
             motor.append(0)
