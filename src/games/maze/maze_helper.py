@@ -114,7 +114,7 @@ def joint_to_game(x_range, y_range  ):
     (position, velocity, effort) = tools.helper.call_return_joint_states()
     # scales the input to the game
     EE_y = tools.helper.remap(round(position[0],5),-0.1,0.1,x_range[0],x_range[1] )
-    EE_x = tools.helper.remap(round(position[2],5),0.6,1.9,y_range[0],y_range[1])
+    EE_x = tools.helper.remap(round(position[2],5),0.29,0.0,y_range[0],y_range[1])
     return (EE_y,EE_x)
 
 def task_to_game(x, y):
@@ -122,7 +122,7 @@ def task_to_game(x, y):
     EE_x = tools.helper.remap(x,-0.10,0.10,0, windowWidth )
     EE_x = max(0, min(EE_x+BLOCKSIZE_X, windowWidth-BLOCKSIZE_X))
 
-    EE_y = tools.helper.remap(y,-0.08,-0.21,0, windowHeight)
+    EE_y = tools.helper.remap(y,0.29,0.0,0, windowHeight)
     EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
 
     return (EE_x,EE_y)
@@ -136,7 +136,6 @@ def game_to_task(x, y):
     #EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
 
     return (game_x,game_y)
-
 def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
                     (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\
