@@ -27,10 +27,10 @@ class HapticController():
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
 
         self.mass = 10
-        K = 1850* np.identity(3)
-        B = 500*np.identity(3)
+        K = 500 * np.identity(3)
+        B = 100 * np.identity(3)
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 1.50*maze_helper.BLOCKSIZE_X
-        d_obs  = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
+        d_obs  = 0.01#0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
 
         self.odom_list = tf.TransformListener()
         self.player = PlayerModel.PlayerModel(self.mass)
@@ -38,7 +38,7 @@ class HapticController():
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         self.player.state = np.array([[task_position[0]], [task_position[1]], [task_position[2]], [0], [0], [0]])
-        self.environment =  WallForces.WallForces(10, 10, d_obs)
+        self.environment =  WallForces.WallForces(50, 50, d_obs)
         self.controller = PDController.PDController(K,B)
         self.time0 = time.clock()
 
@@ -53,8 +53,7 @@ class HapticController():
 
         F = self.calc_arm_input()
         F_env = self.environment.make_force(self.player,haptic)
-
-        self.player.move(np.add(0, F))
+        self.player.move(np.add(F_env, F))
         #self.move(np.add(F_env, F))
 
         #output forces to arm
@@ -73,12 +72,12 @@ class HapticController():
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
         (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
-        task_velocity = -np.array(j3).dot(np.array(velocity).reshape(3, 1))
-        e  = self.player.state[0:3]-np.array(task_position).reshape(3, 1)
+        task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
+        e = self.player.state[0:3]-np.array(task_position).reshape(3, 1)
         ed = self.player.state[3:]-np.array(task_velocity[0:3]).reshape(3, 1)
-        F  = self.controller.get_F(e,ed)
-        F  = np.round(F,2)
-
+        F = 3*self.controller.get_F(e,ed)
+        F = np.round(F,2)
+        print "Force", F
         return F
 
 if __name__ == '__main__':

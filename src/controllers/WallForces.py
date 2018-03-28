@@ -35,7 +35,7 @@ class WallForces():
             #print "obs",obs
             #print "player",msg.player
             d = math.sqrt((obs.x - player.state[1]) ** 2 + (obs.y - player.state[2]) ** 2)
-            theta = math.atan2((obs.y - player.state[2]), (obs.x - player.state[0]))
+            theta = math.atan2((obs.y - player.state[2]), (obs.x - player.state[1]))
             if (max(self.d_obs - d, 0)) != 0:
                 F = self.k_obs * (max(self.d_obs - d, 0))
                 f_y += round(F * math.sin(theta), 2) + self.b_obs*(player.state[4])
@@ -57,7 +57,7 @@ class WallForces():
         if (max(0.005 - d, 0)) != 0:
             F = 20000 * (0.005 - d)
             f_z = (round(F, 2) + 500 * (player.state[3]))
-            print "f_z", f_z
+            #print "f_z", f_z
 
         f_z = 0
 
