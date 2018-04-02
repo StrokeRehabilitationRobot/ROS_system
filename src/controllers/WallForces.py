@@ -12,7 +12,6 @@ import tools.dynamics
 import tf
 
 
-
 class WallForces():
 
     def __init__(self, k_obs, b_obs, d_obs):
@@ -36,13 +35,12 @@ class WallForces():
             #print "player",msg.player
             d = math.sqrt((obs.x - player.state[1]) ** 2 + (obs.y - player.state[2]) ** 2)
             theta = math.atan2((obs.y - player.state[2]), (obs.x - player.state[1]))
+
             if (max(self.d_obs - d, 0)) != 0:
+
                 F = self.k_obs * (max(self.d_obs - d, 0))
                 f_y += round(F * math.sin(theta), 2) + self.b_obs*(player.state[4])
                 f_x += round(F * math.cos(theta), 2) + self.b_obs*(player.state[5])
-            #print "d", d
-            #print "velocity", msg.velocity.linear
-
 
         # Need distance between player and walls
         d = player.state[0] - 0.05

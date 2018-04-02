@@ -32,7 +32,7 @@ class Maze:
 
         self.goal_rec = None
         self.start_rec = None
-        self.player = Rect((maze_helper.windowWidth*0.5, maze_helper.windowHeight*0.5, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y) )
+        self.player = Rect((maze_helper.WINDOWWIDTH * 0.5, maze_helper.WINDOWHEIGHT * 0.5, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y))
 
         self.solved_path = []
         self.score = 0
@@ -67,7 +67,7 @@ class Maze:
         sets up the game, called from maze_callback when a new maze is published.
         :return:
         """
-        self.display_surf = pygame.display.set_mode((maze_helper.windowWidth, maze_helper.windowHeight))
+        self.display_surf = pygame.display.set_mode((maze_helper.WINDOWWIDTH, maze_helper.WINDOWHEIGHT))
 
         self.running = True
         self.am_i_at_goal = False
@@ -188,6 +188,7 @@ class Maze:
 
         path = []
         for point in msg.poses:
+
             pixels_x = (point.pose.position.x * maze_helper.BLOCKSIZE_X) + math.floor(abs((maze_helper.BLOCKSIZE_X - maze_helper.PLAYERSIZE_X) * 0.5))
             pixels_y = (point.pose.position.y * maze_helper.BLOCKSIZE_Y) + math.floor(abs((maze_helper.BLOCKSIZE_Y - maze_helper.PLAYERSIZE_Y) * 0.5))
             path.append(pygame.Rect(pixels_x, pixels_y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y))
@@ -224,14 +225,6 @@ class Maze:
                 pygame.draw.rect(self.display_surf, maze_helper.PURPLE, wall, 0)
         pygame.draw.rect(self.display_surf, maze_helper.RED, self.goal_rec, 0)
         pygame.draw.rect(self.display_surf, maze_helper.BLUE, self.start_rec, 0)
-
-    # def get_velocity(self):
-    #     (position, velocity, effort) = tools.helper.call_return_joint_states()
-    #     (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
-    #     task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
-    #     vel = Twist()
-    #     vel.linear = [task_velocity[0],task_velocity[1],task_velocity[2] ]
-    #     return vel
 
     def at_start(self):
         """
@@ -277,6 +270,7 @@ class Maze:
             # else:
             #     print "Player (x,y):", player_x, player_y
             #     print "Waypoint (x,y):", pose.pose.position.x, pose.pose.position.y
+
 
 
 if __name__ == "__main__":

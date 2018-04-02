@@ -32,9 +32,10 @@ BLOCKSIZE_X = 30
 BLOCKSIZE_Y = 30
 PLAYERSIZE_X = 10
 PLAYERSIZE_Y = 10
-
-windowWidth = 30*BLOCKSIZE_X
-windowHeight = 18*BLOCKSIZE_Y
+XMAPPING = (-0.10, 0.10)
+YMAPPING = (0.29, 0.0)
+WINDOWWIDTH = 30 * BLOCKSIZE_X
+WINDOWHEIGHT = 18 * BLOCKSIZE_Y
 
 def invert(self):
     for index, row in enumerate(self.maze):
@@ -119,21 +120,21 @@ def joint_to_game(x_range, y_range  ):
 
 def task_to_game(x, y):
 
-    EE_x = tools.helper.remap(x,-0.10,0.10,0, windowWidth )
-    EE_x = max(0, min(EE_x+BLOCKSIZE_X, windowWidth-BLOCKSIZE_X))
+    EE_x = tools.helper.remap(x, XMAPPING[0], XMAPPING[1], 0, WINDOWWIDTH)
+    EE_x = max(0, min(EE_x + BLOCKSIZE_X, WINDOWWIDTH - BLOCKSIZE_X))
 
-    EE_y = tools.helper.remap(y,0.29,0.0,0, windowHeight)
-    EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
+    EE_y = tools.helper.remap(y, YMAPPING[0], YMAPPING[1], 0, WINDOWHEIGHT)
+    EE_y = max(0, min(EE_y + BLOCKSIZE_Y, WINDOWHEIGHT - BLOCKSIZE_Y))
 
     return (EE_x,EE_y)
 
 def game_to_task(x, y):
 
-    game_x = tools.helper.remap(x, 0, windowWidth, -0.10, 0.10 )
-    #EE_x = max(0, min(EE_x+BLOCKSIZE_X, windowWidth-BLOCKSIZE_X))
+    game_x = tools.helper.remap(x, 0, WINDOWWIDTH, XMAPPING[0], XMAPPING[1])
+    #EE_x = max(0, min(EE_x+BLOCKSIZE_X, WINDOWWIDTH-BLOCKSIZE_X))
 
-    game_y = tools.helper.remap(y, 0, windowHeight,-0.08, -0.21 )
-    #EE_y = max(0, min(EE_y+BLOCKSIZE_Y, windowHeight-BLOCKSIZE_Y))
+    game_y = tools.helper.remap(y, 0, WINDOWHEIGHT, YMAPPING[0], YMAPPING[1])
+    #EE_y = max(0, min(EE_y+BLOCKSIZE_Y, WINDOWHEIGHT-BLOCKSIZE_Y))
 
     return (game_x,game_y)
 def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
