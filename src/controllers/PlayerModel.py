@@ -18,6 +18,7 @@ class PlayerModel():
 
     def move(self,F, obs):
         """
+        # state: where the player is in task space
         does the position update of a 2nd order system
         pusblish the new position
         """
@@ -45,7 +46,7 @@ class PlayerModel():
         for wall in obs:
             dist_x = abs(self.state[0] - wall.x )
             dist_y = abs(self.state[1] - wall.y )
-            print "dist", dist_x
+            #print "dist", dist_x
             flag_x = dist_x < 0.1
             flag_y = dist_y < 0.1
             if flag_x:

@@ -119,12 +119,11 @@ def joint_to_game(x_range, y_range  ):
     return (EE_y,EE_x)
 
 def task_to_game(x, y):
-
     EE_x = tools.helper.remap(x, XMAPPING[0], XMAPPING[1], 0, WINDOWWIDTH)
-    EE_x = max(0, min(EE_x + BLOCKSIZE_X, WINDOWWIDTH - BLOCKSIZE_X))
+    EE_x = max(BLOCKSIZE_X, min(EE_x, WINDOWWIDTH - BLOCKSIZE_X))
 
     EE_y = tools.helper.remap(y, YMAPPING[0], YMAPPING[1], 0, WINDOWHEIGHT)
-    EE_y = max(0, min(EE_y + BLOCKSIZE_Y, WINDOWHEIGHT - BLOCKSIZE_Y))
+    EE_y = max(BLOCKSIZE_Y, min(EE_y, WINDOWHEIGHT - BLOCKSIZE_Y))
 
     return (EE_x,EE_y)
 

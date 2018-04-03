@@ -73,7 +73,7 @@ class Maze:
         self.am_i_at_goal = False
         self.am_i_at_start = False
         self.score = 0
-
+        self.player = pygame.Rect( 0.5*maze_helper.WINDOWHEIGHT, 0.5*maze_helper.WINDOWHEIGHT, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y )
         self.game_timer = time.time()
         pygame.display.set_caption('Travel from Blue Square to Red Square')
         self.maze_draw()
@@ -90,7 +90,7 @@ class Maze:
         :return:
         """
         (x, y) = maze_helper.task_to_game(msg.x, msg.y)
-        self.player = pygame.Rect(x, y, maze_helper.PLAYERSIZE_X, maze_helper.PLAYERSIZE_Y )
+        self.player.center = (x,y)
 
     def update_force(self):
         """
@@ -110,7 +110,7 @@ class Maze:
                     pt = Point()
                     x = center.x - 0.5*maze_helper.PLAYERSIZE_X
                     y = center.y - 0.5*maze_helper.PLAYERSIZE_Y
-                    (pt.x,pt.y) = maze_helper.game_to_task(x,y)
+                    (pt.x,pt.y) = maze_helper.game_to_task(center.x,center.y)
                     task_coor.append(pt)
                     temp = pygame.Rect((x,y), (maze_helper.PLAYERSIZE_X,maze_helper.PLAYERSIZE_Y) )
                     pygame.draw.rect(self.display_surf, maze_helper.GREEN , temp, 0)
