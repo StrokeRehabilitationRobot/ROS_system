@@ -12,8 +12,10 @@ import PDController
 import WallForces
 import tools.helper
 import tools.dynamics
+import GravityCompensationController
 import games.maze.maze_helper as maze_helper
 import time
+
 
 class HapticController():
 
@@ -38,41 +40,46 @@ class HapticController():
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         self.player.state = np.array([[task_position[0]], [task_position[1]], [task_position[2]], [0], [0], [0]])
-        self.environment =  WallForces.WallForces(100, 50, d_obs)
-        self.controller = PDController.PDController(K,B)
+        self.environment =  WallForces.WallForces(500, 50, d_obs)
+        self.K = np.eye(3)
+        self.K[0][0] =  0.003
+        self.K[1][1] = -0.005
+        self.K[2][2] =  0.0001
+        self.grav = GravityCompensationController.GravityCompensationController(np.asmatrix(self.K))
+        self.controller = PDController.PDController(K, B)
         self.time0 = time.clock()
 
 
     def make_forces(self, haptic):
         """
-        subscriber to the haptic force
-        gets the joints states from listener
-        pass into the controller and Enviroment
-        computers the forces
+            subscriber to the haptic force
+            gets the joints states from listener
+            pass into the controller and Enviroment
+            computers the forces
         """
+        walls = map(maze_helper.point_to_rect, haptic.obstacles)
+        (position, velocity, load) = tools.helper.call_return_joint_states()
+        f_grav = self.grav.get_tau(position, load)
+        f_arm  = self.calc_arm_input(position,velocity)
+        f_env = self.environment.make_force(self.player,haptic)
 
-        F = self.calc_arm_input()
-        F_env = 50*self.environment.make_force(self.player,haptic)
-        print "f_ENV", F_env
-
-        self.player.move(np.add(0,F),haptic.obstacles)
+        self.player.move(np.add(0,f_arm),walls)
 
         #output forces to arm
-        # output_force = WrenchStamped()
-        # output_force.header.frame_id = "base_link"
-        # [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = F_env
-        # self.pub_forces.publish(output_force)
+        output_force = WrenchStamped()
+        output_force.header.frame_id = "base_link"
+        #[output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = Fg #0.005*F_env
+        [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
+        self.pub_forces.publish(output_force)
 
 
-    def calc_arm_input(self):
+    def calc_arm_input(self,position,velocity):
         """
         calculates the input force from the arm
         :return: arm force
         """
-
-        ( position, velocity, _ ) = tools.helper.call_return_joint_states()
-        self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0),rospy.Duration(0.1))
-        (task_position, _ ) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
+        self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
+        (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (j1,j2,j3) = tools.dynamics.get_jacobian_matricies(position)
         task_velocity = np.array(j3).dot(np.array(velocity).reshape(3, 1))
         e  = self.player.state[0:3]-np.array(task_position).reshape(3, 1)

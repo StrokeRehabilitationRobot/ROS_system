@@ -9,7 +9,7 @@ from nav_msgs.msg import OccupancyGrid
 maze_pub = rospy.Publisher('gen_maze', OccupancyGrid, queue_size=1, latch=True)
 
 def make_maze(msg):
-    maze_names = ["box1" "maze1","maze2","maze3","maze4","maze5","maze6","maze7","maze8","maze9","maze10"]
+    maze_names = ["box1", "maze1","maze2","maze3","maze4","maze5","maze6","maze7","maze8","maze9","maze10"]
     rand = np.random.randint(0, len(maze_names))
     maze = mazeBank.getmaze(maze_names[rand])
 

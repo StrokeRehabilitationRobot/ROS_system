@@ -107,6 +107,7 @@ class Maze:
                 task_coor = []
 
                 for center in centers:
+
                     pt = Point()
                     x = center.x - 0.5*maze_helper.PLAYERSIZE_X
                     y = center.y - 0.5*maze_helper.PLAYERSIZE_Y
@@ -260,8 +261,10 @@ class Maze:
         player_x = math.floor(float(self.player.centerx) / maze_helper.BLOCKSIZE_X)  # This is the (x,y) block in the grid where the center of the player is
         player_y = math.floor(float(self.player.centery) / maze_helper.BLOCKSIZE_Y)
         point_index = maze_helper.index_to_cell(self.maze, player_x, player_y)
+
         if maze_helper.check_cell(self.maze, int(point_index)) == 1:
             self.score -= 1
+
         for rec in self.solved_path:
             if rec.centerx == player_x and rec.centery == player_y:
                 #print "On track"

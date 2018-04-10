@@ -47,6 +47,13 @@ def rec_to_point(rec):
     pt.y = rec.centery
     return pt
 
+def point_to_rect(point):
+    rect = pygame.Rect(0,0,BLOCKSIZE_X,BLOCKSIZE_Y)
+    rect.centerx = point.x
+    rect.centery = point.y
+    return rect
+
+
 def get_i_j(maze,index):
     """
     converts 1D to 2D
