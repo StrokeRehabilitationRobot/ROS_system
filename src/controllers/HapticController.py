@@ -29,6 +29,13 @@ class HapticController():
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
 
         self.mass = 10
+
+        grav_K = np.eye(3)
+        grav_K[0][0] = 0.003
+        grav_K[1][1] = -0.005
+        grav_K[2][2] = 0.0001
+        self.gravity = GravityCompensationController.GravityCompensationController(np.asmatrix(grav_K))
+
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 1.50*maze_helper.BLOCKSIZE_X
@@ -46,11 +53,7 @@ class HapticController():
 
         self.player.state = np.array([[x], [y], [z], [0], [0], [0]])
         self.environment = WallForces.WallForces(500, 50, d_obs)
-        self.K = np.eye(3)
-        self.K[0][0] = 0.003
-        self.K[1][1] =-0.005
-        self.K[2][2] = 0.0001
-        self.grav = GravityCompensationController.GravityCompensationController(np.asmatrix(self.K))
+
         self.controller = PDController.PDController(K, B)
         self.time0 = time.clock()
 
@@ -64,7 +67,9 @@ class HapticController():
         """
 
         (position, velocity, load) = tools.helper.call_return_joint_states()
-        f_grav = self.grav.get_tau(position, load)
+
+        f_grav = self.gravity.get_tau(position, load)
+
         f_arm  = self.calc_arm_input(position,velocity)
         f_env = self.environment.make_force(self.player,haptic)
         self.player.move(np.add(f_env ,f_arm),haptic.obstacles)
