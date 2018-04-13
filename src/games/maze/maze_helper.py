@@ -49,10 +49,15 @@ def rec_to_point(rec):
 
 def point_to_rect(point):
     rect = pygame.Rect(0,0,BLOCKSIZE_X,BLOCKSIZE_Y)
-    rect.centerx = point.x
-    rect.centery = point.y
+    rect.centerx = point[0]
+    rect.centery = point[1]
     return rect
 
+def player_to_rect(x,y):
+    rect = pygame.Rect(0,0,PLAYERSIZE_X,PLAYERSIZE_Y)
+    rect.centerx = x
+    rect.centery = y
+    return rect
 
 def get_i_j(maze,index):
     """
@@ -132,7 +137,7 @@ def task_to_game(x, y):
     EE_y = tools.helper.remap(y, YMAPPING[0], YMAPPING[1], 0, WINDOWHEIGHT)
     EE_y = max(BLOCKSIZE_Y, min(EE_y, WINDOWHEIGHT - BLOCKSIZE_Y))
 
-    return (EE_x,EE_y)
+    return (int(EE_x),int(EE_y))
 
 def game_to_task(x, y):
 
@@ -143,6 +148,7 @@ def game_to_task(x, y):
     #EE_y = max(0, min(EE_y+BLOCKSIZE_Y, WINDOWHEIGHT-BLOCKSIZE_Y))
 
     return (game_x,game_y)
+
 def neighbors_euclidean(maze, loc_x, loc_y, looking_for = [0,2,3]):
     neighbors_in = [(loc_x - 1, loc_y - 1), (loc_x, loc_y - 1), (loc_x + 1, loc_y - 1),\
                     (loc_x - 1, loc_y),     (loc_x, loc_y),     (loc_x + 1, loc_y),\

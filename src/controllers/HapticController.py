@@ -32,19 +32,24 @@ class HapticController():
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
         d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 1.50*maze_helper.BLOCKSIZE_X
-        d_obs  = 0.02#0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
+        d_obs = 0.02#0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
 
         self.odom_list = tf.TransformListener()
-        self.player = PlayerModel.PlayerModel(self.mass)
-
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
-        self.player.state = np.array([[task_position[0]], [task_position[1]], [task_position[2]], [0], [0], [0]])
-        self.environment =  WallForces.WallForces(500, 50, d_obs)
+
+        x = task_position[0]
+        y = task_position[1]
+        z = task_position[2]
+
+        self.player = PlayerModel.PlayerModel(self.mass,(x,y,z))
+
+        self.player.state = np.array([[x], [y], [z], [0], [0], [0]])
+        self.environment = WallForces.WallForces(500, 50, d_obs)
         self.K = np.eye(3)
-        self.K[0][0] =  0.003
+        self.K[0][0] = 0.003
         self.K[1][1] = -0.005
-        self.K[2][2] =  0.0001
+        self.K[2][2] = 0.0001
         self.grav = GravityCompensationController.GravityCompensationController(np.asmatrix(self.K))
         self.controller = PDController.PDController(K, B)
         self.time0 = time.clock()
@@ -57,19 +62,17 @@ class HapticController():
             pass into the controller and Enviroment
             computers the forces
         """
-        walls = map(maze_helper.point_to_rect, haptic.obstacles)
         (position, velocity, load) = tools.helper.call_return_joint_states()
-        f_grav = self.grav.get_tau(position, load)
+        #f_grav = self.grav.get_tau(position, load)
         f_arm  = self.calc_arm_input(position,velocity)
         f_env = self.environment.make_force(self.player,haptic)
-
-        self.player.move(np.add(0,f_arm),walls)
+        self.player.move(np.add(0 ,f_arm),haptic.obstacles)
 
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
         #[output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = Fg #0.005*F_env
-        [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
+        #[output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
         self.pub_forces.publish(output_force)
 
 

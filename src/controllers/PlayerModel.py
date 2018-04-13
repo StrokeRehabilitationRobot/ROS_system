@@ -4,14 +4,15 @@ import rospy
 import numpy as np
 import time
 import math
+import games.maze.maze_helper as maze_helper
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 
 class PlayerModel():
 
 
-    def __init__(self,mass):
+    def __init__(self,mass,pose):
         self.mass = mass
-        self.state  = np.array([[0], [0], [0], [0], [0], [0]])
+        self.state  = np.array([[pose[0]], [pose[1]], [pose[2]], [0], [0], [0]])
         self.time0 = time.clock()
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
 
@@ -43,14 +44,11 @@ class PlayerModel():
         flag_x = False
         flag_y = False
 
-        for wall in obs:
-            dist_x = abs(self.state[0] - wall.x )
-            dist_y = abs(self.state[1] - wall.y )
-            #print "dist", dist_x
-            flag_x = dist_x < 0.1
-            flag_y = dist_y < 0.1
-            if flag_x:
-                break
+
+        # if  self.state[0] < maze_helper.WINDOWWIDTH and self.state[0] > 0 \
+        #     and self.state[0] < maze_helper.WINDOWHEIGHT and self.state[1] > 0:
+        #
+        self.detect_collision(obs)
 
         self.time0 = time.clock()
         player = Point()
@@ -60,19 +58,79 @@ class PlayerModel():
         self.pub_player.publish(player)
 
 
-    def detect_collision(self,walls):
+    def detect_collision(self, obstacles):
         # Move the rect
-        self.rect.x += dx
-        self.rect.y += dy
 
+        count = 0
+        (px,py) = maze_helper.task_to_game(self.state[1], self.state[2] )
+        player = maze_helper.player_to_rect( px , py )
         # If you collide with a wall, move out based on velocity
+        wall_game = []
+
+        for obs in obstacles:
+            wall_game.append(maze_helper.task_to_game(obs.x,obs.y) )
+
+        walls = map(maze_helper.point_to_rect, wall_game)
+        print "walls", wall_game
+        fixed_x = False
+        fixed_y = False
+
         for wall in walls:
-            if self.player.rect.colliderect(wall.rect):
-                if dx > 0:  # Moving right; Hit the left side of the wall
-                    self.rect.right = wall.rect.left
-                if dx < 0:  # Moving left; Hit the right side of the wall
-                    self.rect.left = wall.rect.right
-                if dy > 0:  # Moving down; Hit the top side of the wall
-                    self.rect.bottom = wall.rect.top
-                if dy < 0:  # Moving up; Hit the bottom side of the wall
-                    self.rect.top = wall.rect.bottom
+
+            if player.colliderect(wall):
+
+
+                if player.centerx > wall.centerx and player.centery ==  wall.centery:
+                    x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
+                    self.state[1] = x #+ 0.005
+                    self.state[4] = 0
+                    print "left"
+
+                if player.centerx < wall.centerx and player.centery == wall.centery:
+                    x, y = maze_helper.game_to_task(wall.left - maze_helper.PLAYERSIZE_X, 0)
+                    self.state[1] = x  # + 0.005
+                    self.state[4] = 0
+                    print "right"
+
+                if player.centerx == wall.centerx and player.centery > wall.centery:
+                    x, y = maze_helper.game_to_task(0,wall.bottom + maze_helper.PLAYERSIZE_Y)
+                    self.state[2] = y
+                    self.state[5] = 0
+                    print "bottom"
+
+                if player.centerx == wall.centerx and player.centery < wall.centery:
+                    x, y = maze_helper.game_to_task(0,wall.top - maze_helper.PLAYERSIZE_Y)
+                    self.state[2] = y
+                    self.state[5] = 0
+                    print "top"
+
+            # if not fixed_x and abs(player.centerx-wall.centerx) > 0:
+                #
+                #     if self.state[4] < 0:  # Moving right; Hit the left side of the wall
+                #         x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
+                #         self.state[1] = x #+ 0.005
+                #         self.state[4] = 0
+                #         fixed_x = True
+                #
+                #     if self.state[4] > 0:  # Moving left; Hit the right side of the wall
+                #         x, y = maze_helper.game_to_task(wall.left- maze_helper.PLAYERSIZE_X, 0)
+                #         self.state[1] = x #- 0.005
+                #         self.state[4] = 0
+                #         fixed_x = True
+                #
+                # if not fixed_y and abs(player.centery-wall.centery) > 0 :
+                #
+                #     if self.state[5] > 0:  # Moving down; Hit the top side of the wall
+                #         x, y = maze_helper.game_to_task(0, wall.bottom+maze_helper.PLAYERSIZE_Y)
+                #         self.state[2] = y #+ 0.005
+                #         self.state[5]= 0
+                #         fixed_y = True
+                #
+                #     if self.state[5] < 0:  # Moving up; Hit the bottom side of the wall
+                #         x, y = maze_helper.game_to_task(0, wall.top-maze_helper.PLAYERSIZE_Y)
+                #         self.state[2] = y #- 0.005
+                #         self.state[5] = 0
+                #         fixed_y = True
+
+        print count
+        print "_______________________________________"

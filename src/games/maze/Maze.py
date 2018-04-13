@@ -102,7 +102,6 @@ class Maze:
             msg = hapticForce()
             if self.running:
 
-                player_center = maze_helper.rec_to_point(self.player)
                 centers = maze_helper.collision_plane(self.maze,self.player)
                 task_coor = []
 

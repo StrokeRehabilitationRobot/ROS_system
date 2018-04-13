@@ -19,7 +19,7 @@ class GravityCompensationController():
         g = dynamics.make_gravity_matrix(q)
         M = dynamics.mass_matrix(q)
         temp = self.K*np.linalg.inv(M) * g
-        if activate_grav:
+        if True:
             u = np.linalg.inv(dynamics.get_J_tranpose(q))*temp
         else:
             u = np.array([[0],[0],[0]])
@@ -30,5 +30,5 @@ class GravityCompensationController():
 
 
     def moving(self,load):
-        print "load1", load[1]
+
         return not( load[1] < 0.46 or load[1] > 0.53)
