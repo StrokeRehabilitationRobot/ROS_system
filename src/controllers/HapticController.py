@@ -31,8 +31,8 @@ class HapticController():
         self.mass = 10
 
         grav_K = np.eye(3)
-        grav_K[0][0] = 0.003
-        grav_K[1][1] = -0.005
+        grav_K[0][0] = 0.0009
+        grav_K[1][1] = -0.008
         grav_K[2][2] = 0.0001
         self.gravity = GravityCompensationController.GravityCompensationController(np.asmatrix(grav_K))
 
