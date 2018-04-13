@@ -38,16 +38,9 @@ class PlayerModel():
         A[1,4] = dt
         A[2,5] = dt
 
+
         old_state = self.state
         self.state = np.dot(A,self.state) + np.dot(B,xdd)
-
-        flag_x = False
-        flag_y = False
-
-
-        # if  self.state[0] < maze_helper.WINDOWWIDTH and self.state[0] > 0 \
-        #     and self.state[0] < maze_helper.WINDOWHEIGHT and self.state[1] > 0:
-        #
         self.detect_collision(obs)
 
         self.time0 = time.clock()
@@ -104,33 +97,7 @@ class PlayerModel():
                     self.state[5] = 0
                     print "top"
 
-            # if not fixed_x and abs(player.centerx-wall.centerx) > 0:
-                #
-                #     if self.state[4] < 0:  # Moving right; Hit the left side of the wall
-                #         x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
-                #         self.state[1] = x #+ 0.005
-                #         self.state[4] = 0
-                #         fixed_x = True
-                #
-                #     if self.state[4] > 0:  # Moving left; Hit the right side of the wall
-                #         x, y = maze_helper.game_to_task(wall.left- maze_helper.PLAYERSIZE_X, 0)
-                #         self.state[1] = x #- 0.005
-                #         self.state[4] = 0
-                #         fixed_x = True
-                #
-                # if not fixed_y and abs(player.centery-wall.centery) > 0 :
-                #
-                #     if self.state[5] > 0:  # Moving down; Hit the top side of the wall
-                #         x, y = maze_helper.game_to_task(0, wall.bottom+maze_helper.PLAYERSIZE_Y)
-                #         self.state[2] = y #+ 0.005
-                #         self.state[5]= 0
-                #         fixed_y = True
-                #
-                #     if self.state[5] < 0:  # Moving up; Hit the bottom side of the wall
-                #         x, y = maze_helper.game_to_task(0, wall.top-maze_helper.PLAYERSIZE_Y)
-                #         self.state[2] = y #- 0.005
-                #         self.state[5] = 0
-                #         fixed_y = True
+
 
         print count
         print "_______________________________________"
