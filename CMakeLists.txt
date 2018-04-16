@@ -19,7 +19,7 @@ add_message_files(DIRECTORY msg FILES
 
 udpMessage.msg
 hapticForce.msg
-
+PlayerState.msg
 )
 
 

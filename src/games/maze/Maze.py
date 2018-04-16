@@ -15,14 +15,10 @@ from strokeRehabSystem.msg import hapticForce
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 from std_msgs.msg import Bool
 import rospy
-import time
+from strokeRehabSystem.msg import *
+
 import tf
-import tools.joint_states_listener
-import tools.helper
-import tools.dynamics
-import controllers.HapticController
-import EnviromentDynamics
-from operator import sub
+
 import time
 
 
@@ -47,7 +43,8 @@ class Maze:
         rospy.init_node('MazeGame', anonymous=True)
         rospy.Subscriber("gen_maze", OccupancyGrid, self.maze_callback)
         rospy.Subscriber("a_star", Path, self.path_callback)
-        rospy.Subscriber('Player', Point, self.update_player)
+        rospy.Subscriber('Player_State', PlayerState, self.update_player)
+
         self.odom_list = tf.TransformListener()
         self.pub_goal = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
@@ -89,7 +86,7 @@ class Maze:
         :param msg: x and y location of the player in the end effector space (actually x and z location in robot frame)
         :return:
         """
-        (x, y) = maze_helper.task_to_game(msg.x, msg.y)
+        (x, y) = maze_helper.task_to_game(msg.pose.position.x, msg.pose.position.y)
         self.player.center = (x,y)
 
     def update_force(self):
@@ -164,8 +161,10 @@ class Maze:
         starts = []
         goals = []
         for index, pt in enumerate(self.maze.data):
+
             bx,by = maze_helper.get_i_j(self.maze,index)
             cell = maze_helper.check_cell(self.maze,index)
+
             if cell == 1:
                 self.walls.append(pygame.Rect(bx * maze_helper.BLOCKSIZE_X, by * maze_helper.BLOCKSIZE_Y, maze_helper.BLOCKSIZE_X, maze_helper.BLOCKSIZE_Y))
             elif cell == 2:
@@ -223,6 +222,7 @@ class Maze:
         """
         for wall in self.walls:
                 pygame.draw.rect(self.display_surf, maze_helper.PURPLE, wall, 0)
+
         pygame.draw.rect(self.display_surf, maze_helper.RED, self.goal_rec, 0)
         pygame.draw.rect(self.display_surf, maze_helper.BLUE, self.start_rec, 0)
 

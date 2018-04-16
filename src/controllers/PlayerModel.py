@@ -6,6 +6,7 @@ import time
 import math
 import games.maze.maze_helper as maze_helper
 from geometry_msgs.msg import Pose,Point, WrenchStamped
+from strokeRehabSystem.msg import *
 
 class PlayerModel():
 
@@ -14,7 +15,7 @@ class PlayerModel():
         self.mass = mass
         self.state  = np.array([[pose[0]], [pose[1]], [pose[2]], [0], [0], [0]])
         self.time0 = time.clock()
-        self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
+        self.pub_player_state = rospy.Publisher('Player_State', PlayerState, queue_size=1)
 
 
     def move(self,F, obs):
@@ -43,13 +44,22 @@ class PlayerModel():
         self.state = np.dot(A,self.state) + np.dot(B,xdd)
         self.detect_collision(obs)
 
-        self.time0 = time.clock()
-        player = Point()
-        player.x = self.state[1]
-        player.y = self.state[2]
-        player.z = self.state[0]
-        self.pub_player.publish(player)
+        msg = PlayerState()
 
+        msg.pose.position.x = self.state[1]
+        msg.pose.position.y = self.state[2]
+        msg.pose.position.z = self.state[0]
+
+        msg.vel.linear.x = self.state[5]
+        msg.vel.linear.y = self.state[4]
+        msg.vel.linear.z = self.state[3]
+
+        msg.accel.linear.x = xdd[1]
+        msg.accel.linear.y = xdd[2]
+        msg.accel.linear.z = xdd[0]
+
+        self.time0 = time.clock()
+        self.pub_player_state.publish(msg)
 
     def detect_collision(self, obstacles):
         # Move the rect

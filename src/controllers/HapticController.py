@@ -15,7 +15,7 @@ import tools.dynamics
 import GravityCompensationController
 import games.maze.maze_helper as maze_helper
 import time
-
+from sensor_msgs.msg import JointState
 
 class HapticController():
 
@@ -27,6 +27,7 @@ class HapticController():
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
         self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
         self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
+        self.pub_move_player = rospy.Publisher("move_player", JointState, queue_size=1)
 
         self.mass = 10
 
@@ -77,8 +78,8 @@ class HapticController():
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        #[output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.05*f_env
-        [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
+        [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.05*f_env
+        #[output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
         self.pub_forces.publish(output_force)
 
 
@@ -97,6 +98,7 @@ class HapticController():
         F  = np.round(F,2)
 
         return F
+
 
 if __name__ == '__main__':
     haptic = HapticController()
