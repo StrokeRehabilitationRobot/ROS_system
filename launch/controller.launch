@@ -1,0 +1,14 @@
+<launch>
+
+
+
+
+    <node pkg="strokeRehabSystem" type="HapticController.py" name="Haptic_Controller" output="screen">
+    </node>
+
+    
+    <node pkg="strokeRehabSystem" type="PlayerModel.py" name="Player_Model" output="screen">
+    </node>
+
+
+</launch>

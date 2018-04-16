@@ -34,6 +34,8 @@ catkin_package(
   INCLUDE_DIRS src/games
   INCLUDE_DIRS src/controllers
   INCLUDE_DIRS src/tests
+  INCLUDE_DIRS src/models
+  INCLUDE_DIRS src/haptics
 )
 install(PROGRAMS scripts/hid2udp.sh DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 include_directories(

@@ -10,24 +10,25 @@ class GravityCompensationController():
 
     def __init__(self, k):
         self._prev = None
-        self._K = k
+        self.K = k
         pass
 
-    def get_torque(self, robot):
+    def get_tau(self, q, load):
 
-        self._prev  = copy.deepcopy(robot)
-        g = dynamics.make_gravity_matrix(robot)
-        M = dynamics.make_mass_matrix(robot)
-        q = np.asarray(robot.q).reshape(3, 1)
-        qd = np.asarray(robot.qd).reshape(3, 1)
-        load = np.asarray(robot.tau).reshape(3, 1)
-
-        u =  self._K*g
-
+        activate_grav = self.moving(load)
+        g = dynamics.make_gravity_matrix(q)
+        M = dynamics.mass_matrix(q)
+        temp = self.K*np.linalg.inv(M) * g
+        if True:
+            u = np.linalg.inv(dynamics.get_J_tranpose(q))*temp
+        else:
+            u = np.array([[0],[0],[0]])
         return u
 
-    def update_K_l(self, k):
-        self._K_l = k
+    def update_K(self, k):
+        self.K = k
 
-    def update_K_v(self, k):
-        self._K_v = k
+
+    def moving(self,load):
+
+        return not( load[1] < 0.46 or load[1] > 0.53)

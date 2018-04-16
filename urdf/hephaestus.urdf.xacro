@@ -40,7 +40,7 @@
     </link>
 
     <joint name="${prefix}_joint2" type="revolute">
-      <origin xyz=".24 0 0" rpy=" 0 0 0"/>
+      <origin xyz=".24 0 0" rpy="0 0 1.57"/>
       <parent link="${prefix}_link2"/>
       <child link="${prefix}_link3"/>
       <limit effort="1.0" lower="0" upper="6" velocity="1.0"/>
