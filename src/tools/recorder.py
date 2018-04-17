@@ -31,7 +31,7 @@ def goal_callback(msg):
 
     at_goal = msg.data == True
     print "saving"
-    with open("up_left.csv", "w") as file:
+    with open("right_up.csv", "w") as file:
         writer1 = csv.writer(file)
         writer1.writerow(['x', 'y','z', 'xd', 'yd', 'zd', 'xdd', 'ydd', 'zdd'])
         for row in states:
