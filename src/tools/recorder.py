@@ -1,58 +1,64 @@
+#!/usr/bin/env python
+
 import rospy
-from strokeRehabSystem import *
+from strokeRehabSystem.srv import *
+from strokeRehabSystem.msg import *
 from std_msgs.msg import Bool
+import csv
 
 
 
-def stat_callback(msg):
+def state_callback(msg):
     global at_goal
     global at_start
-    global Xstates
-    global Ystates
-    global Zstates
+    global states
+
 
 
     if at_start and not at_goal:
+        print "record"
+        state = [msg.pose.position.x, msg.pose.position.y,msg.pose.position.z,\
+                  msg.vel.linear.x,msg.vel.linear.y,msg.vel.linear.z, \
+                  msg.accel.linear.x,msg.accel.linear.y,msg.accel.linear.z]
 
-        xstate = [msg.pose.position.x, msg.vel.linear.x,msg.accel.linear.x]
-        ystate = [msg.pose.position.y, msg.vel.linear.y, msg.accel.linear.y]
-        zstate = [msg.pose.position.z, msg.vel.linear.z, msg.accel.linear.z]
-
-        Xstates.append(xstate)
-        Ystates.append(ystate)
-        Zstates.append(zstate)
+        states.append(state)
 
 
-def goal_callback(msg)
+def goal_callback(msg):
 
     global at_goal
+    global states
 
     at_goal = msg.data == True
+    print "saving"
+    with open("up_left.csv", "w") as file:
+        writer1 = csv.writer(file)
+        writer1.writerow(['x', 'y','z', 'xd', 'yd', 'zd', 'xdd', 'ydd', 'zdd'])
+        for row in states:
+            print row
+            writer1.writerow(row)
 
-
-def start_callback(msg)
+def start_callback(msg):
 
     global at_start
-
+    print "Start"
     at_start = msg.data == True
+
 
 if __name__ == '__main__':
 
     global at_goal
     global at_start
-    global Xstates
-    global Ystates
-    global Zstates
+    global states
+
 
     at_goal = False
     at_start = False
-    Xstates = []
-    Ystates = []
-    Zstates = []
+    states = []
 
-	rospy.init_node("recorder")
-	rospy.Subscriber("/player_state", PlayerState, state_callback)
+    rospy.init_node("recorder")
+    rospy.Subscriber("/Player_State", PlayerState, state_callback)
     rospy.Subscriber("/at_goal", Bool, goal_callback )
     rospy.Subscriber("/at_start", Bool,start_callback)
 
-	rospy.spin()
+    rospy.spin()
