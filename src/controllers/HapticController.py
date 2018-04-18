@@ -33,14 +33,13 @@ class HapticController():
 
         grav_K = np.eye(3)
         grav_K[0][0] = 0.0009
-        grav_K[1][1] = -0.008
-        grav_K[2][2] = 0.0001
+        grav_K[1][1] = -3
+        grav_K[2][2] = 0.009
         self.gravity = GravityCompensationController.GravityCompensationController(np.asmatrix(grav_K))
 
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
-        d_goal = 0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 1.50*maze_helper.BLOCKSIZE_X
-        d_obs = 0.02#0.5*maze_helper.BLOCKSIZE_X + 0.50*maze_helper.PLAYERSIZE_X + 0.25*maze_helper.BLOCKSIZE_X
+        d_obs = 0.02
 
         self.odom_list = tf.TransformListener()
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
@@ -79,7 +78,7 @@ class HapticController():
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
         [output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.05*f_env
-        #[output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
+        [output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = f_grav #0.005*F_env
         self.pub_forces.publish(output_force)
 
 
@@ -98,6 +97,9 @@ class HapticController():
         F  = np.round(F,2)
 
         return F
+
+    def goal_force(self,goal):
+        pass
 
 
 if __name__ == '__main__':
