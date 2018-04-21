@@ -31,11 +31,6 @@ class HapticController():
 
         self.mass = 10
 
-        grav_K = np.eye(3)
-        grav_K[0][0] = 0.0009
-        grav_K[1][1] =-0.00005
-        grav_K[2][2] = -0.00005
-        self.gravity = GravityCompensationController.GravityCompensationController(np.asmatrix(grav_K))
 
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
@@ -51,7 +46,6 @@ class HapticController():
         z = task_position[2]
 
         self.player = PlayerModel.PlayerModel(self.mass,(x,y,z))
-
         self.player.state = np.array([[x], [y], [z], [0], [0], [0]])
         self.environment = WallForces.WallForces(500, 50, d_obs)
 
@@ -66,28 +60,25 @@ class HapticController():
             pass into the controller and Enviroment
             computers the forces
         """
+        alpha = -0.05
 
         (position, velocity, load) = tools.helper.call_return_joint_states()
 
         f_env = self.environment.make_force(self.player,haptic)
         f_arm = self.calc_arm_input(position, velocity)
 
-
+        # TODO seperate out into node
         self.player.move(np.add(f_env ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
-        #f_arm = [[0],[0],[0] ]
-        f_grav = self.gravity.get_tau(position)
-        print "grav", f_grav
+
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        alpha = -0.05
-        beta = -0.0001
-        output_force.wrench.force.x = alpha * ( f_env[2] ) + beta*f_grav[0]
-        output_force.wrench.force.y = alpha * ( f_env[0] ) + beta*f_grav[1]
-        output_force.wrench.force.z = alpha * ( f_env[0] ) + beta*f_grav[2]
-        #[output_force.wrench.force.y, output_force.wrench.force.x, output_force.wrench.force.z] = 0.5*f_env
-        #[output_force.wrench.force.x, output_force.wrench.force.y, output_force.wrench.force.z] = 0.1*(f_env + 0*f_grav)
+        output_force.wrench.force.x = alpha * ( f_env[2] )
+        output_force.wrench.force.y = alpha * ( f_env[0] )
+        output_force.wrench.force.z = alpha * ( f_env[0] )
+
+
         self.pub_forces.publish(output_force)
 
 
@@ -107,34 +98,6 @@ class HapticController():
         F  = np.round(F,2)
 
         return F
-
-
-    def calc_output_force(self,position, velocity):
-
-
-
-        (j1, j2, j3) = tools.dynamics.get_jacobian_matricies(position)
-        j3 = j3[0:3,0:3]
-        j_t = dynamics.get_J_tranpose(position)
-        angles = np.asarray(position).reshape(3, 1)
-        dq = self.prev_angles - angles
-        self.prev_angles = angles
-        K = np.eye(3)
-        K[0][0] = 5  # 0.0009
-        K[1][1] = -500# -0.5
-        K[2][2] = -5  # -0.00005
-        grav_K = np.eye(3)
-        grav_K[0][0] = 0.0009
-        grav_K[1][1] = -1
-        grav_K[2][2] = -0.05  # -0.00005
-
-        #print "move", j_t * K * j3 * dq
-
-        #print "grav", grav_K*dynamics.make_gravity_matrix(position)
-
-        tau  = 15*j_t * K * j3 * dq - 10* np.asarray(velocity).reshape(3,1)   #+ 0.25*grav_K #* dynamics.make_gravity_matrix( np.asarray(position).reshape(3,1) + dq )
-        print "tau", dq
-        return  j_t*tau# dynamics.make_gravity_matrix(position)
 
 
     def goal_force(self,goal):

@@ -35,7 +35,7 @@ class GravityController():
         output_force.header.frame_id = "base_link"
         (position, velocity, load) = tools.helper.call_return_joint_states()
         f_grav = self.controller.get_tau(position)
-        beta = -0.0001
+        beta = -0.001
         output_force.wrench.force.x = force.wrench.force.x + beta * f_grav[0]
         output_force.wrench.force.y = force.wrench.force.y + beta * f_grav[1]
         output_force.wrench.force.z = force.wrench.force.z + beta * f_grav[2]
