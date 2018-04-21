@@ -1,5 +1,3 @@
-
-
 import sys
 import rospy
 from strokeRehabSystem.msg import *
@@ -15,18 +13,12 @@ import tf
 
 class WallForces():
 
-
-
-
     def __init__(self, k_obs, b_obs, d_obs):
         """
         """
         self.k_obs = -k_obs
         self.b_obs = b_obs
         self.d_obs = d_obs
-        self.odom_list = tf.TransformListener()
-        self.pub_base = rospy.Publisher('base_force', WrenchStamped, queue_size=1)
-        self.pub_tip = rospy.Publisher('tip_force', WrenchStamped, queue_size=1)
 
     def make_force(self, player, enviroment):
 
@@ -40,7 +32,7 @@ class WallForces():
             dx = round(obs.x - player.state[1], 2)
             dy = round(obs.y - player.state[2], 2)
             d = round(math.sqrt(dx ** 2 + dy ** 2),2)
-            theta =round(math.atan2(dy, dx),2)
+            theta = round(math.atan2(dy, dx),2)
 
             #print "d", d
             if (max(self.d_obs - d, 0)) != 0:
@@ -68,14 +60,7 @@ class WallForces():
 
         f_z = 0
 
-        base_force = WrenchStamped()
-        base_force.header.frame_id = "base_link"
-        base_force.wrench.force.x = round(f_x, 1)
-        base_force.wrench.force.y = round(f_z, 1)
-        base_force.wrench.force.z = round(f_y, 1)
-        self.pub_base.publish(base_force)
         f_tip = np.asarray([[round(f_z, 1)], [-round(f_x, 1)], [round(f_y, 1)]])
-        print f_tip
 
         return f_tip
 
