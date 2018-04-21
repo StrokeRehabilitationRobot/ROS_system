@@ -4,19 +4,15 @@ import sys
 import rospy
 from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
-import math
-import PlayerModel
+import controllers.PlayerModel
 import tf
 import numpy as np
-import PDController
-import WallForces
+import controllers.PDController
+import controllers.WallForces
 import tools.helper
 import tools.dynamics
-import GravityCompensationController
-import games.maze.maze_helper as maze_helper
 import time
 from sensor_msgs.msg import JointState
-from tools import dynamics
 
 class HapticController():
 
@@ -45,11 +41,11 @@ class HapticController():
         y = task_position[1]
         z = task_position[2]
 
-        self.player = PlayerModel.PlayerModel(self.mass,(x,y,z))
+        self.player = controllers.PlayerModel.PlayerModel(self.mass, (x, y, z))
         self.player.state = np.array([[x], [y], [z], [0], [0], [0]])
-        self.environment = WallForces.WallForces(500, 50, d_obs)
+        self.environment = controllers.WallForces.WallForces(500, 50, d_obs)
 
-        self.controller = PDController.PDController(K, B)
+        self.controller = controllers.PDController.PDController(K, B)
         self.time0 = time.clock()
         self.prev_angles = np.asarray(position).reshape(3,1)
 
