@@ -48,7 +48,7 @@ class Maze:
         self.odom_list = tf.TransformListener()
         self.pub_goal = rospy.Publisher('at_goal', Bool, queue_size=1)
         self.pub_start = rospy.Publisher('at_start', Bool, queue_size=1)
-        self.pub_enviroment = rospy.Publisher("haptic", hapticForce, queue_size=1)
+        self.pub_enviroment = rospy.Publisher("enviroment", hapticForce, queue_size=1)
 
         force_thread = threading.Thread(target=self.update_force)
         force_thread.daemon = True

@@ -23,11 +23,10 @@ class HapticController():
     def __init__(self):
         """
         """
-        rospy.init_node("models")
-        rospy.Subscriber("haptic", hapticForce, self.make_forces)
+        rospy.init_node("haptic_controller")
+        rospy.Subscriber("enviroment", hapticForce, self.make_forces)
         self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
-        self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
-        self.pub_move_player = rospy.Publisher("move_player", WrenchStamped, queue_size=1)
+        self.pub_forces = rospy.Publisher("haptic_force", WrenchStamped, queue_size=1)
         self.pub_move_player = rospy.Publisher("move_player", JointState, queue_size=1)
 
         self.mass = 10
@@ -77,7 +76,7 @@ class HapticController():
         self.player.move(np.add(f_env ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
         #f_arm = [[0],[0],[0] ]
-        f_grav = self.gravity.get_tau(f_arm, position, load)
+        f_grav = self.gravity.get_tau(position)
         print "grav", f_grav
         #output forces to arm
         output_force = WrenchStamped()

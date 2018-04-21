@@ -6,9 +6,12 @@
     <node pkg="strokeRehabSystem" type="HapticController.py" name="Haptic_Controller" output="screen">
     </node>
 
-    
-    <node pkg="strokeRehabSystem" type="PlayerModel.py" name="Player_Model" output="screen">
+    <node pkg="strokeRehabSystem" type="GravityController.py" name="Gravity_Controller" output="screen">
     </node>
+
+    <!---->
+    <!--<node pkg="strokeRehabSystem" type="PlayerModel.py" name="Player_Model" output="screen">-->
+    <!--</node>-->
 
 
 </launch>
