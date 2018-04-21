@@ -4,7 +4,7 @@ import sys
 import rospy
 from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
-import controllers.PlayerModel
+import models.PlayerModel
 import tf
 import numpy as np
 import controllers.PDController
@@ -26,8 +26,6 @@ class HapticController():
         self.pub_move_player = rospy.Publisher("move_player", JointState, queue_size=1)
 
         self.mass = 10
-
-
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
         d_obs = 0.02
@@ -41,7 +39,7 @@ class HapticController():
         y = task_position[1]
         z = task_position[2]
 
-        self.player = controllers.PlayerModel.PlayerModel(self.mass, (x, y, z))
+        self.player = models.PlayerModel.PlayerModel(self.mass, (x, y, z))
         self.player.state = np.array([[x], [y], [z], [0], [0], [0]])
         self.environment = controllers.WallForces.WallForces(500, 50, d_obs)
 
