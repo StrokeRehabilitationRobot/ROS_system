@@ -30,4 +30,4 @@ for name in files:
     Important_values = dmp.train_dmp(filey, 200, y_list, 0.001)
     Important_values = dmp.train_dmp(filez, 200, z_list, 0.001)
 
-    print x_list
+    #print x_list

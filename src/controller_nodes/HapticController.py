@@ -4,6 +4,7 @@ import sys
 import rospy
 from strokeRehabSystem.msg import *
 from geometry_msgs.msg import Pose,Point, WrenchStamped
+from nav_msgs.msg import Path
 import models.PlayerModel
 import tf
 import numpy as np
@@ -15,6 +16,7 @@ import tools.dynamics
 import games.maze.maze_helper as maze_helper
 import time
 from sensor_msgs.msg import JointState
+
 
 class HapticController():
 
@@ -72,6 +74,7 @@ class HapticController():
 
         if self.useing_guide:
             pass
+            self.calc_dmp(f_wall)
         # TODO seperate out into node
         self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
@@ -109,7 +112,15 @@ class HapticController():
 
         self.goal_index = 0
         dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
-        self.goal_runner.update_dmp_file(dmp_file)
+        print dmp_file
+        full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
+        #print self.goals[self.goal_index]
+        #print  list( self.goals[self.goal_index])
+        goal = list(self.goals[self.goal_index])#.append(self.player.state[0])
+        goal.append( np.asscalar(self.player.state[0]) )
+        print full_path + dmp_file
+        print goal
+        self.goal_runner.update_dmp_file(full_path + dmp_file, (self.player.state[1],self.player.state[2],self.player.state[0]),goal )
 
 
 
@@ -134,15 +145,19 @@ class HapticController():
 
     def calc_dmp(self,f_env):
 
-        dist = tools.helper.distance((self.player.state[1], self.player.state[2]), (px, py))
+        dist = tools.helper.distance((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
+        full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
 
         if dist < 0.001:
 
             self.goal_index += 1
             dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
-            self.goal_runner.update_dmp_file(dmp_file)
-        dt = 
-        F = DMP.step()
+            self.goal_runner.update_dmp_file(full_path + dmp_file)
+
+        dt = 0.001
+        tau = 1.0
+        F = self.goal_runner.step(tau,dt)
+        print F
 
 
 

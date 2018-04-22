@@ -74,7 +74,6 @@ class PlayerModel():
             wall_game.append(maze_helper.task_to_game(obs.x,obs.y) )
 
         walls = map(maze_helper.point_to_rect, wall_game)
-        print "walls", wall_game
         fixed_x = False
         fixed_y = False
 
@@ -87,27 +86,21 @@ class PlayerModel():
                     x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
                     self.state[1] = x #+ 0.005
                     self.state[4] = 0
-                    print "left"
 
                 if player.centerx < wall.centerx and player.centery == wall.centery:
                     x, y = maze_helper.game_to_task(wall.left - maze_helper.PLAYERSIZE_X, 0)
                     self.state[1] = x  # + 0.005
                     self.state[4] = 0
-                    print "right"
 
                 if player.centerx == wall.centerx and player.centery > wall.centery:
                     x, y = maze_helper.game_to_task(0,wall.bottom + maze_helper.PLAYERSIZE_Y)
                     self.state[2] = y
                     self.state[5] = 0
-                    print "bottom"
 
                 if player.centerx == wall.centerx and player.centery < wall.centery:
                     x, y = maze_helper.game_to_task(0,wall.top - maze_helper.PLAYERSIZE_Y)
                     self.state[2] = y
                     self.state[5] = 0
-                    print "top"
 
 
 
-        print count
-        print "_______________________________________"
