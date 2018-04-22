@@ -5,7 +5,7 @@ import rospy
 import sys
 from strokeRehabSystem.srv import ReturnJointStates
 from strokeRehabSystem.msg import *
-
+import math
 
 def encoder_to_angle(ticks):
     """
@@ -169,3 +169,6 @@ def get_mass():
 def get_centriod():
     centroid = [0.10424, 0.14550, 0.203]
     return centroid
+
+def distance(p0,p1):
+    return math.sqrt( (p0[0]-p1[0])**2 + (p0[1]-p1[1])**2   )

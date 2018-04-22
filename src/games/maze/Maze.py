@@ -5,12 +5,8 @@ import pygame
 from pygame.locals import *
 import maze_helper
 import math
-import mazeBank
 import threading
-from sensor_msgs.msg import JointState
-import numpy as np
 from nav_msgs.msg import OccupancyGrid,Path
-from strokeRehabSystem.srv import ReturnJointStates
 from strokeRehabSystem.msg import hapticForce
 from geometry_msgs.msg import Pose,Point, WrenchStamped
 from std_msgs.msg import Bool

@@ -9,8 +9,10 @@ import tf
 import numpy as np
 import controllers.PDController
 import controllers.WallForces
+import controllers.DMPController as DMP
 import tools.helper
 import tools.dynamics
+import games.maze.maze_helper as maze_helper
 import time
 from sensor_msgs.msg import JointState
 
@@ -20,10 +22,7 @@ class HapticController():
         """
         """
         rospy.init_node("haptic_controller")
-        rospy.Subscriber("enviroment", hapticForce, self.make_forces)
-        self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
-        self.pub_forces = rospy.Publisher("haptic_force", WrenchStamped, queue_size=1)
-        self.pub_move_player = rospy.Publisher("move_player", JointState, queue_size=1)
+
 
         self.mass = 10
         K = 500 * np.identity(3)
@@ -34,6 +33,12 @@ class HapticController():
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
         (position, velocity, load) = tools.helper.call_return_joint_states()
+
+        self.useing_guide = False
+        self.goals = []
+        self.goal_index  = 0
+        self.goal_runner = DMP.DMPController()
+
 
         x = task_position[0]
         y = task_position[1]
@@ -47,7 +52,11 @@ class HapticController():
         self.time0 = time.clock()
         self.prev_angles = np.asarray(position).reshape(3,1)
 
-    def make_forces(self, haptic):
+        rospy.Subscriber("enviroment", hapticForce, self.make_forces_callback)
+        self.pub_forces = rospy.Publisher("haptic_force", WrenchStamped, queue_size=1)
+        rospy.Subscriber("a_star", Path, self.path_callback)
+
+    def make_forces_callback(self, haptic):
         """
             subscriber to the haptic force
             gets the joints states from listener
@@ -55,25 +64,53 @@ class HapticController():
             computers the forces
         """
         alpha = -0.05
-
         (position, velocity, load) = tools.helper.call_return_joint_states()
 
-        f_env = self.environment.make_force(self.player,haptic)
+        f_wall = self.environment.make_force(self.player,haptic)
         f_arm = self.calc_arm_input(position, velocity)
+        f_goal = np.array([[0],[0],[0]])
 
+        if self.useing_guide:
+            pass
         # TODO seperate out into node
-        self.player.move(np.add(f_env ,f_arm),haptic.obstacles)
+        self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
 
         #output forces to arm
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        output_force.wrench.force.x = alpha * ( f_env[2] )
-        output_force.wrench.force.y = alpha * ( f_env[0] )
-        output_force.wrench.force.z = alpha * ( f_env[0] )
+        output_force.wrench.force.x = alpha * ( f_wall[2] )
+        output_force.wrench.force.y = alpha * ( f_wall[0] )
+        output_force.wrench.force.z = alpha * ( f_wall[1] )
 
 
         self.pub_forces.publish(output_force)
+
+
+    def path_callback(self,msg):
+        """
+
+        :param path:
+        :return:
+        """
+        self.useing_guide = True
+        min_dist = 1000000000000000000
+        min_index = 0
+        index = 0
+        for point in msg.poses:
+
+            (px,py) = maze_helper.game_to_task(point.pose.position.x,point.pose.position.y)
+            dist  = tools.helper.distance((self.player.state[1],self.player.state[2]),(px,py))
+            if dist < min_dist:
+                min_dist = dist
+                min_index = index
+            index += 1
+            self.goals.append((px,py))
+
+        self.goal_index = 0
+        dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
+        self.goal_runner.update_dmp_file(dmp_file)
+
 
 
     def calc_arm_input(self,position,velocity):
@@ -94,10 +131,41 @@ class HapticController():
         return F
 
 
-    def goal_force(self,goal):
-        pass
+
+    def calc_dmp(self,f_env):
+
+        dist = tools.helper.distance((self.player.state[1], self.player.state[2]), (px, py))
+
+        if dist < 0.001:
+
+            self.goal_index += 1
+            dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
+            self.goal_runner.update_dmp_file(dmp_file)
+        dt = 
+        F = DMP.step()
+
+
+
+
 
 
 if __name__ == '__main__':
     haptic = HapticController()
     rospy.spin()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

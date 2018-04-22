@@ -1,7 +1,7 @@
 
 [submodule "lib/dmp"]
 	path = lib/dmp
-	url = git@github.com:StrokeRehabilitationRobotdmp_experiments.git
+	url = git@github.com:nag92/dmp_experiments.git
 
 
 
