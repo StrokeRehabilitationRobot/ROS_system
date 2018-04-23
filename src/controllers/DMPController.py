@@ -66,8 +66,6 @@ class DMPController(object):
         return F
 
 
-
-
 def dmp_chooser(player,goal):
     """
 

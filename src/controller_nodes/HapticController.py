@@ -71,7 +71,6 @@ class HapticController():
         f_wall = self.environment.make_force(self.player,haptic)
         f_arm = self.calc_arm_input(position, velocity)
         f_goal = np.array([[0],[0],[0]])
-
         if self.useing_guide:
             pass
             self.calc_dmp(f_wall)
@@ -85,8 +84,6 @@ class HapticController():
         output_force.wrench.force.x = alpha * ( f_wall[2] )
         output_force.wrench.force.y = alpha * ( f_wall[0] )
         output_force.wrench.force.z = alpha * ( f_wall[1] )
-
-
         self.pub_forces.publish(output_force)
 
 
@@ -102,7 +99,8 @@ class HapticController():
         index = 0
         for point in msg.poses:
 
-            (px,py) = maze_helper.game_to_task(point.pose.position.x,point.pose.position.y)
+            (px,py) = maze_helper.game_to_task(30*point.pose.position.x+10,30*point.pose.position.y+10)
+
             dist  = tools.helper.distance((self.player.state[1],self.player.state[2]),(px,py))
             if dist < min_dist:
                 min_dist = dist
@@ -110,7 +108,9 @@ class HapticController():
             index += 1
             self.goals.append((px,py))
 
-        self.goal_index = 0
+        self.goal_index = 1
+        print len(self.goals)
+        (x,y) =  maze_helper.task_to_game(*self.goals[self.goal_index ])
         dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
         print dmp_file
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
@@ -118,10 +118,8 @@ class HapticController():
         #print  list( self.goals[self.goal_index])
         goal = list(self.goals[self.goal_index])#.append(self.player.state[0])
         goal.append( np.asscalar(self.player.state[0]) )
-        print full_path + dmp_file
-        print goal
-        self.goal_runner.update_dmp_file(full_path + dmp_file, (self.player.state[1],self.player.state[2],self.player.state[0]),goal )
 
+        self.goal_runner.update_dmp_file(full_path + dmp_file, (self.player.state[1],self.player.state[2],self.player.state[0]),goal )
 
 
     def calc_arm_input(self,position,velocity):
@@ -145,23 +143,26 @@ class HapticController():
 
     def calc_dmp(self,f_env):
 
-        dist = tools.helper.distance((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
+        (x,y) = maze_helper.task_to_game(*self.goals[self.goal_index ])
+        print "player", (self.player.state[0],self.player.state[1],self.player.state[2])
+        print "goal", self.goals[self.goal_index ]
+        dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
+        #print dist
 
         if dist < 0.001:
-
+            print 'at goal'
             self.goal_index += 1
             dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
-            self.goal_runner.update_dmp_file(full_path + dmp_file)
+            goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
+            goal.append(np.asscalar(self.player.state[0]))
+            self.goal_runner.update_dmp_file(full_path + dmp_file,
+                                             (self.player.state[1], self.player.state[2], self.player.state[0]),
+                                             goal)
 
         dt = 0.001
         tau = 1.0
         F = self.goal_runner.step(tau,dt)
-        print F
-
-
-
-
 
 
 if __name__ == '__main__':

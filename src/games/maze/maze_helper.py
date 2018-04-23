@@ -122,6 +122,7 @@ def index_to_cell(maze,x,y):
     else:
         return maze.info.width*y + x
 
+
 def joint_to_game(x_range, y_range  ):
 
     (position, velocity, effort) = tools.helper.call_return_joint_states()
