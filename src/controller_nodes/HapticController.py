@@ -143,14 +143,14 @@ class HapticController():
 
     def calc_dmp(self,f_env):
 
-        (x,y) = maze_helper.task_to_game(*self.goals[self.goal_index ])
-        print "player", (self.player.state[0],self.player.state[1],self.player.state[2])
-        print "goal", self.goals[self.goal_index ]
-        dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
+        (x,y) =  (self.goals[self.goal_index][0],self.goals[self.goal_index][1])
+        #print "player", (self.player.state[0],self.player.state[1],self.player.state[2])
+        #print "goal", self.goals[self.goal_index ]
+        dist = tools.helper.distance((self.player.state[1], self.player.state[2]) )
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-        #print dist
+        print dist
 
-        if dist < 0.001:
+        if dist < 0.005:
             print 'at goal'
             self.goal_index += 1
             dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
