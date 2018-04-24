@@ -34,7 +34,7 @@ class DMPController(object):
         self.last_dmp = 3*[0]
         self.err = [0,0,0]
 
-    def step(self, tau, dt):#, current_state=[0,0,0], force=[0,0,0]):
+    def step(self, tau, dt,state):#, force=[0,0,0]):
         """
 
         :param state: current state of the system
@@ -59,12 +59,12 @@ class DMPController(object):
         # self.last_dmp[1] = y_t
         # self.last_dmp[2] = z_t
         #
-        # up = 50 * (np.array([[x_t], [y_t], [z_t]]) - state[0:3])
-        # uv = 50 * (np.array([[xd_t], [yd_t], [zd_t]]) - state[3:])
+        up = 0.00050 * (np.array([[x_t], [y_t], [z_t]]) - state[0:3])
+        uv = 0.00050 * (np.array([[xd_t], [yd_t], [zd_t]]) - state[3:])
         F = np.array([[xdd_t], [ydd_t], [zdd_t]])# - up - uv
 
-        return F
-
+        #return F
+        return np.array([[z_t], [x_t], [y_t]])
 
 def dmp_chooser(player,goal):
     """
@@ -84,14 +84,14 @@ def dmp_chooser(player,goal):
 
     if axis:
         if not sign_x:
-            file = "right"
-        else:
             file = "left"
+        else:
+            file = "right"
     else:
         if sign_y:
-            file = "up"
-        else:
             file = "down"
+        else:
+            file = "up"
 
     return file
 
