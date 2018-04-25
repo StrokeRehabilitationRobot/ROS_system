@@ -59,12 +59,12 @@ class DMPController(object):
         # self.last_dmp[1] = y_t
         # self.last_dmp[2] = z_t
         #
-        up = 0.00050 * (np.array([[x_t], [y_t], [z_t]]) - state[0:3])
-        uv = 0.00050 * (np.array([[xd_t], [yd_t], [zd_t]]) - state[3:])
-        F = np.array([[zdd_t], [xdd_t], [ydd_t]])# - up - uv
+        up = 50 * (np.array([[z_t], [x_t], [y_t]]) - state[0:3])
+        uv = 50 * (np.array([[zd_t], [xd_t], [yd_t]]) - state[3:])
+        F = 1*np.array([[zdd_t], [xdd_t], [ydd_t]]) #- up - uv
 
         #return F
-        return np.array([[x_t], [y_t], [z_t]])
+        return np.array([[z_t], [x_t], [y_t]])
 
 def dmp_chooser(player,goal):
     """

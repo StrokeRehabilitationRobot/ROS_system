@@ -66,9 +66,9 @@ class PlayerModel():
 
         msg = PlayerState()
 
-        msg.pose.position.x = self.state[0]
-        msg.pose.position.y = self.state[1]
-        msg.pose.position.z = self.state[2]
+        msg.pose.position.x = self.state[1]
+        msg.pose.position.y = self.state[2]
+        msg.pose.position.z = self.state[0]
 
         msg.vel.linear.x = self.state[5]
         msg.vel.linear.y = self.state[4]
