@@ -65,7 +65,7 @@ class HapticController():
             pass into the controller and Enviroment
             computers the forces
         """
-        alpha = -0.05
+        alpha = -0.005
         (position, velocity, load) = tools.helper.call_return_joint_states()
 
         f_wall = self.environment.make_force(self.player,haptic)
@@ -73,13 +73,15 @@ class HapticController():
         f_goal = np.array([[0],[0],[0]])
         if self.useing_guide:
             F = self.calc_dmp(f_wall)
-            print "jksfhdklsajfhdjksad"
+            #print "jksfhdklsajfhdjksad"
             #self.player.move(np.add(0, F), haptic.obstacles)\
-            self.player.state[0] = 0#self.goals[self.goal_index][1]# np.asscalar(F[0])
-            self.player.state[1] = self.goals[self.goal_index][0]##np.asscalar(F[1])
-            self.player.state[2] = self.goals[self.goal_index][1]##np.asscalar(F[2])
-            print self.player.state[0]
+            self.player.state[0] = self.goals[self.goal_index][1]# np.asscalar(F[2])
+            self.player.state[1] = self.goals[self.goal_index][0]#np.asscalar(F[0])
+            self.player.state[2] = self.goals[self.goal_index][1]#np.asscalar(F[1])
+            print np.asscalar(F[0])
             self.player.update()
+            #self.player.move(np.add(0 ,F),haptic.obstacles)
+
         else:
             self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
@@ -114,7 +116,7 @@ class HapticController():
             index += 1
             self.goals.append((px,py))
 
-        self.goal_index = 2
+        self.goal_index = 1
         #print len(self.goals)
         (x,y) =  maze_helper.task_to_game(*self.goals[self.goal_index ])
         dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
@@ -156,21 +158,23 @@ class HapticController():
         dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
 
-        # if dist < 0.005:
-        #     print 'at goal'
-        #     self.goal_index += 1
-        #     dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
-        #     goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
-        #     goal.append(np.asscalar(self.player.state[0]))
-        #     self.goal_runner.update_dmp_file(full_path + dmp_file,
-        #                                      (self.player.state[1], self.player.state[2], self.player.state[0]),
-        #                                      goal)
+        if dist < 0.005:
 
-        dt = 0.01#time.time() - self.time0
-        tau = 2.0
+            print 'at goal'
+            self.goal_index += 1
+            dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
+            goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
+            goal.append(np.asscalar(self.player.state[0]))
+            self.goal_runner.update_dmp_file(full_path + dmp_file,
+                                             (self.player.state[1], self.player.state[2], self.player.state[0]),
+                                             goal)
+
+        dt = 0.001#time.time() - self.time0
+        tau = 1.0
         F = self.goal_runner.step(tau,dt,self.player.state)
 
         self.time0 = time.time()
+        time.sleep(0.1)
         return F
 
 if __name__ == '__main__':

@@ -29,11 +29,11 @@ class DMPController(object):
         print self.file + "_x.xml"
 
         self.runner_x = dmp.Mod_DMP_runner(self.file + "_x.xml", np.asscalar( start[1]), goal[1])
-        self.runner_y = dmp.Mod_DMP_runner(self.file + "_y.xml", np.asscalar( start[0]), goal[0])
-        self.runner_z = dmp.Mod_DMP_runner(self.file + "_z.xml", np.asscalar( start[2]), goal[2])
+        self.runner_y = dmp.Mod_DMP_runner(self.file + "_y.xml", np.asscalar( start[2]), goal[2])
+        self.runner_z = dmp.Mod_DMP_runner(self.file + "_z.xml", np.asscalar( start[1]), goal[1])
         self.last_dmp = 3*[0]
         self.err = [0,0,0]
-
+        print "yoooooooooooooooo"
     def step(self, tau, dt,state):#, force=[0,0,0]):
         """
 
@@ -61,7 +61,7 @@ class DMPController(object):
         #
         up = 0.00050 * (np.array([[x_t], [y_t], [z_t]]) - state[0:3])
         uv = 0.00050 * (np.array([[xd_t], [yd_t], [zd_t]]) - state[3:])
-        F = np.array([[xdd_t], [ydd_t], [zdd_t]])# - up - uv
+        F = np.array([[zdd_t], [xdd_t], [ydd_t]])# - up - uv
 
         #return F
         return np.array([[z_t], [x_t], [y_t]])
@@ -84,9 +84,9 @@ def dmp_chooser(player,goal):
 
     if axis:
         if not sign_x:
-            file = "left"
-        else:
             file = "right"
+        else:
+            file = "left"
     else:
         if sign_y:
             file = "down"

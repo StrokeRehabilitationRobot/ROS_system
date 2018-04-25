@@ -64,7 +64,6 @@ class Mod_DMP_runner():
         if externail_force is not None:
             self.zd =  self.zd + externail_force
 
-
         yd  = np.multiply(self.z,tau)
         ydd = np.multiply(self.zd,tau)
 
