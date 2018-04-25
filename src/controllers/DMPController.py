@@ -89,9 +89,9 @@ def dmp_chooser(player,goal):
             file = "left"
     else:
         if sign_y:
-            file = "down"
-        else:
             file = "up"
+        else:
+            file = "down"
 
     return file
 

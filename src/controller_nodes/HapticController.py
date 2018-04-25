@@ -154,12 +154,12 @@ class HapticController():
     def calc_dmp(self,f_env):
 
         self.time0 = time.time()
-        (x,y) =  (self.goals[self.goal_index][0],self.goals[self.goal_index][1])
+        (x,y) = (self.goals[self.goal_index][0],self.goals[self.goal_index][1])
         #print "player", (self.player.state[0],self.player.state[1],self.player.state[2])
+        dist = tools.helper.distance((self.player.state[0], self.player.state[1]),(x,y) )
         #print "goal", self.goals[self.goal_index ]
-        dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-
+        print dist
         if dist < 0.005:
 
             print 'at goal'
@@ -169,13 +169,13 @@ class HapticController():
             goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
             goal.append(np.asscalar(self.player.state[0]))
             self.goal_runner.update_dmp_file(full_path + dmp_file,
-                                             (self.player.state[1], self.player.state[2], self.player.state[0]),
+                                             (self.player.state[0], self.player.state[1], self.player.state[0]),
                                              goal)
 
         dt = 0.001#time.time() - self.time0
         tau = 1.0
-        if self.count < (tau / dt) + 1:
-            F = self.goal_runner.step(tau,dt,self.player.state)
+        #if self.count < (tau / dt) + 1:
+        F = self.goal_runner.step(tau,dt,self.player.state)
 
         self.time0 = time.time()
         #time.sleep(0.1)
