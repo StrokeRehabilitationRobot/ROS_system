@@ -28,9 +28,9 @@ class DMPController(object):
         self.file = file
         print self.file + "_x.xml"
 
-        self.runner_x = dmp.Mod_DMP_runner(self.file + "_x.xml", np.asscalar( start[1]), goal[1])
-        self.runner_y = dmp.Mod_DMP_runner(self.file + "_y.xml", np.asscalar( start[2]), goal[2])
-        self.runner_z = dmp.Mod_DMP_runner(self.file + "_z.xml", np.asscalar( start[1]), goal[1])
+        self.runner_x = dmp.Mod_DMP_runner(self.file + "_x.xml", np.asscalar( start[0]), goal[0])
+        self.runner_y = dmp.Mod_DMP_runner(self.file + "_y.xml", np.asscalar( start[1]), goal[1])
+        self.runner_z = dmp.Mod_DMP_runner(self.file + "_z.xml", np.asscalar( start[2]), goal[2])
         self.last_dmp = 3*[0]
         self.err = [0,0,0]
         print "yoooooooooooooooo"
@@ -64,7 +64,7 @@ class DMPController(object):
         F = np.array([[zdd_t], [xdd_t], [ydd_t]])# - up - uv
 
         #return F
-        return np.array([[z_t], [x_t], [y_t]])
+        return np.array([[x_t], [y_t], [z_t]])
 
 def dmp_chooser(player,goal):
     """

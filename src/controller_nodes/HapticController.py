@@ -30,7 +30,7 @@ class HapticController():
         K = 500 * np.identity(3)
         B = 50 * np.identity(3)
         d_obs = 0.02
-
+        self.count = 0
         self.odom_list = tf.TransformListener()
         self.odom_list.waitForTransform('base_link', 'master_EE', rospy.Time(0), rospy.Duration(0.1))
         (task_position, _) = self.odom_list.lookupTransform('base_link', 'master_EE', rospy.Time(0))
@@ -75,11 +75,14 @@ class HapticController():
             F = self.calc_dmp(f_wall)
             #print "jksfhdklsajfhdjksad"
             #self.player.move(np.add(0, F), haptic.obstacles)\
-            self.player.state[0] = self.goals[self.goal_index][1]# np.asscalar(F[2])
-            self.player.state[1] = self.goals[self.goal_index][0]#np.asscalar(F[0])
-            self.player.state[2] = self.goals[self.goal_index][1]#np.asscalar(F[1])
-            print np.asscalar(F[0])
+            self.player.state[0] = np.asscalar(F[0])#self.goals[self.goal_index][1]# np.asscalar(F[2])
+            self.player.state[1] = np.asscalar(F[1])
+            self.player.state[2] = np.asscalar(F[2])
+
             self.player.update()
+            #print "input",(np.asscalar(F[0]), np.asscalar(F[1]))
+            #print  "output" ,self.player.state[0:3]
+            #print "--------------------------------"
             #self.player.move(np.add(0 ,F),haptic.obstacles)
 
         else:
@@ -148,7 +151,6 @@ class HapticController():
         return F
 
 
-
     def calc_dmp(self,f_env):
 
         self.time0 = time.time()
@@ -162,6 +164,7 @@ class HapticController():
 
             print 'at goal'
             self.goal_index += 1
+            self.count = 0
             dmp_file = DMP.dmp_chooser((self.player.state[1], self.player.state[2]), self.goals[self.goal_index])
             goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
             goal.append(np.asscalar(self.player.state[0]))
@@ -171,10 +174,11 @@ class HapticController():
 
         dt = 0.001#time.time() - self.time0
         tau = 1.0
-        F = self.goal_runner.step(tau,dt,self.player.state)
+        if self.count < (tau / dt) + 1:
+            F = self.goal_runner.step(tau,dt,self.player.state)
 
         self.time0 = time.time()
-        time.sleep(0.1)
+        #time.sleep(0.1)
         return F
 
 if __name__ == '__main__':
