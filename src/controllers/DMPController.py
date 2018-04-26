@@ -44,23 +44,23 @@ class DMPController(object):
         :param force:
         :return:
         # """
-        # err_x = abs(current_state[1] - self.last_dmp[0])
-        # err_y = abs(current_state[2] - self.last_dmp[1])
-        # err_z = abs(current_state[0] - self.last_dmp[2])
-        #
+        err_z = abs(state[0] - self.last_dmp[2])[0]
+        err_x = abs(state[1] - self.last_dmp[0])[0]
+        err_y = abs(state[2] - self.last_dmp[1])[0]
+        print "err", err_z
         # self.err = [ err_x, err_y, err_z ]
-        # alpha = 0.1
+        alpha = 0.1
 
-        (x_t, xd_t, xdd_t) = self.runner_x.step(tau, dt)#, error=alpha*self.err[0], externail_force=force[0])
-        (y_t, yd_t, ydd_t) = self.runner_y.step(tau, dt)#, error=alpha*self.err[1], externail_force=force[1])
-        (z_t, zd_t, zdd_t) = self.runner_z.step(tau, dt)#, error=alpha*self.err[2], externail_force=force[2])
+        (x_t, xd_t, xdd_t) = self.runner_x.step(tau, dt, error=alpha*err_x)# externail_force=force[0])
+        (y_t, yd_t, ydd_t) = self.runner_y.step(tau, dt, error=alpha*err_y)#, externail_force=force[1])
+        (z_t, zd_t, zdd_t) = self.runner_z.step(tau, dt, error=alpha*err_z)#, externail_force=force[2])
 
-        # self.last_dmp[0] = x_t
-        # self.last_dmp[1] = y_t
-        # self.last_dmp[2] = z_t
+        self.last_dmp[0] = x_t
+        self.last_dmp[1] = y_t
+        self.last_dmp[2] = z_t
         #
-        up = 50 * (np.array([[z_t], [x_t], [y_t]]) - state[0:3])
-        uv = 4000 * (np.array([[zd_t], [xd_t], [yd_t]]) - state[3:])
+        up = 100 * (np.array([[z_t], [x_t], [y_t]]) - state[0:3])
+        uv = 3000 * (np.array([[zd_t], [xd_t], [yd_t]]) - state[3:])
         F = np.array([[zdd_t], [xdd_t], [ydd_t]]) - up - uv
 
         return F

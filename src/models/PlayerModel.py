@@ -97,30 +97,30 @@ class PlayerModel():
         fixed_x = False
         fixed_y = False
         #
-        # for wall in walls:
-        #
-        #     if player.colliderect(wall):
-        #
-        #
-        #         if player.centerx > wall.centerx and player.centery ==  wall.centery:
-        #             x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
-        #             self.state[1] = x #+ 0.005
-        #             self.state[4] = 0
-        #
-        #         if player.centerx < wall.centerx and player.centery == wall.centery:
-        #             x, y = maze_helper.game_to_task(wall.left - maze_helper.PLAYERSIZE_X, 0)
-        #             self.state[1] = x  # + 0.005
-        #             self.state[4] = 0
-        #
-        #         if player.centerx == wall.centerx and player.centery > wall.centery:
-        #             x, y = maze_helper.game_to_task(0,wall.bottom + maze_helper.PLAYERSIZE_Y)
-        #             self.state[2] = y
-        #             self.state[5] = 0
-        #
-        #         if player.centerx == wall.centerx and player.centery < wall.centery:
-        #             x, y = maze_helper.game_to_task(0,wall.top - maze_helper.PLAYERSIZE_Y)
-        #             self.state[2] = y
-        #             self.state[5] = 0
+        for wall in walls:
+
+            if player.colliderect(wall):
+
+
+                if player.centerx > wall.centerx and player.centery ==  wall.centery:
+                    x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
+                    self.state[1] = x #+ 0.005
+                    self.state[4] = 0
+
+                if player.centerx < wall.centerx and player.centery == wall.centery:
+                    x, y = maze_helper.game_to_task(wall.left - maze_helper.PLAYERSIZE_X, 0)
+                    self.state[1] = x  # + 0.005
+                    self.state[4] = 0
+
+                if player.centerx == wall.centerx and player.centery > wall.centery:
+                    x, y = maze_helper.game_to_task(0,wall.bottom + maze_helper.PLAYERSIZE_Y)
+                    self.state[2] = y
+                    self.state[5] = 0
+
+                if player.centerx == wall.centerx and player.centery < wall.centery:
+                    x, y = maze_helper.game_to_task(0,wall.top - maze_helper.PLAYERSIZE_Y)
+                    self.state[2] = y
+                    self.state[5] = 0
 
 
 

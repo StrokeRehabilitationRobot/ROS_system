@@ -82,7 +82,7 @@ class HapticController():
             #rint "input",(np.asscalar(F[0]), np.asscalar(F[1]))
            # print  "output" ,self.player.state[0:3]
             print "--------------------------------"
-            self.player.move(np.add(0 ,F),haptic.obstacles)
+            self.player.move(np.add(f_wall ,F),haptic.obstacles)
 
         else:
             self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
