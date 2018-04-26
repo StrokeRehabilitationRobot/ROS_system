@@ -174,7 +174,7 @@ class HapticController():
         dt = 0.001#time.time() - self.time0
         tau = 1.0
         #if self.count < (tau / dt) + 1:
-        F = self.goal_runner.step(tau,dt,self.player.state)
+        F = self.goal_runner.step(tau,dt,self.player.state,f_env)
 
         self.time0 = time.time()
         #time.sleep(0.1)

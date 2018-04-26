@@ -34,7 +34,7 @@ class DMPController(object):
         self.last_dmp = 3*[0]
         self.err = [0,0,0]
         print "yoooooooooooooooo"
-    def step(self, tau, dt,state):#, force=[0,0,0]):
+    def step(self, tau, dt,state, force=[0,0,0]):
         """
 
         :param state: current state of the system
@@ -50,10 +50,10 @@ class DMPController(object):
         print "err", err_z
         # self.err = [ err_x, err_y, err_z ]
         alpha = 0.1
-
-        (x_t, xd_t, xdd_t) = self.runner_x.step(tau, dt, error=alpha*err_x)# externail_force=force[0])
-        (y_t, yd_t, ydd_t) = self.runner_y.step(tau, dt, error=alpha*err_y)#, externail_force=force[1])
-        (z_t, zd_t, zdd_t) = self.runner_z.step(tau, dt, error=alpha*err_z)#, externail_force=force[2])
+        print force
+        (x_t, xd_t, xdd_t) = self.runner_x.step(tau, dt, error=alpha*err_x,externail_force=np.asscalar(force[2]))
+        (y_t, yd_t, ydd_t) = self.runner_y.step(tau, dt, error=alpha*err_y, externail_force=np.asscalar(force[0]))
+        (z_t, zd_t, zdd_t) = self.runner_z.step(tau, dt, error=alpha*err_z, externail_force=np.asscalar(force[1]))
 
         self.last_dmp[0] = x_t
         self.last_dmp[1] = y_t
