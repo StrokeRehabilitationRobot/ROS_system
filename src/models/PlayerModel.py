@@ -38,11 +38,14 @@ class PlayerModel():
         A[0,3] = dt
         A[1,4] = dt
         A[2,5] = dt
-
-
+        v_max = 0.5
         old_state = self.state
         self.state = np.dot(A,self.state) + np.dot(B,xdd)
+        # self.state[3] = max(-v_max, min(self.state[3], v_max))
+        # self.state[4] = max(-v_max, min(self.state[4], v_max))
+        # self.state[5] = max(-v_max, min(self.state[5], v_max))
         self.detect_collision(obs)
+
         msg = PlayerState()
 
         msg.pose.position.x = self.state[1]
@@ -60,6 +63,12 @@ class PlayerModel():
         self.time0 = time.clock()
         self.pub_player_state.publish(msg)
 
+
+    def stop(self):
+
+        self.state[5] = 0
+        self.state[4] = 0
+        self.state[3] = 0
 
 
     def update(self):

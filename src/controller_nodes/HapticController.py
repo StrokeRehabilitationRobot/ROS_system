@@ -65,35 +65,29 @@ class HapticController():
             pass into the controller and Enviroment
             computers the forces
         """
-        alpha = -0.005
+
         (position, velocity, load) = tools.helper.call_return_joint_states()
 
         f_wall = self.environment.make_force(self.player,haptic)
         f_arm = self.calc_arm_input(position, velocity)
         f_goal = np.array([[0],[0],[0]])
         if self.useing_guide:
-            F = self.calc_dmp(f_wall)
-            #print "jksfhdklsajfhdjksad"
-            # self.player.move(np.add(0, F), haptic.obstacles)
-            # self.player.state[0] = np.asscalar(F[0])#self.goals[self.goal_index][1]# np.asscalar(F[2])
-            # self.player.state[1] = np.asscalar(F[1])
-            # self.player.state[2] = np.asscalar(F[2])
-            # self.player.update()
-            #rint "input",(np.asscalar(F[0]), np.asscalar(F[1]))
-           # print  "output" ,self.player.state[0:3]
-            print "--------------------------------"
-            self.player.move(np.add(f_wall ,F),haptic.obstacles)
-
+            f_goal = self.calc_dmp(f_wall)
+            f_ext = np.add(0,f_goal)
+            f_total = np.add(f_ext,0)
+            self.player.move(f_total,haptic.obstacles)
         else:
             self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
         #F = self.calc_output_force(position,velocity)
 
         #output forces to arm
+        alpha_wall = -0.005
+        alpha_goal = -0.05
         output_force = WrenchStamped()
         output_force.header.frame_id = "base_link"
-        output_force.wrench.force.x = alpha * ( f_wall[2] )
-        output_force.wrench.force.y = alpha * ( f_wall[0] )
-        output_force.wrench.force.z = alpha * ( f_wall[1] )
+        output_force.wrench.force.x = alpha_wall * f_wall[2] + alpha_goal * f_goal[2]
+        output_force.wrench.force.y = alpha_wall * f_wall[0] + alpha_goal * f_goal[0]
+        output_force.wrench.force.z = alpha_wall * f_wall[1] + alpha_goal * f_goal[1]
         self.pub_forces.publish(output_force)
 
 
@@ -158,12 +152,12 @@ class HapticController():
         dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         #print "goal", self.goals[self.goal_index ]
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-        print dist
         if dist < 0.005:
 
-            print 'at goal'
             self.goal_index += 1
+            print self.goal_index
             self.count = 0
+            self.player.stop()
             dmp_file = DMP.dmp_chooser((self.player.state[0], self.player.state[2]), self.goals[self.goal_index])
             goal = list(self.goals[self.goal_index])  # .append(self.player.state[0])
             goal.append(np.asscalar(self.player.state[0]))
@@ -172,13 +166,13 @@ class HapticController():
                                              goal)
 
         dt = 0.001#time.time() - self.time0
-        tau = 1.0
+        tau = 0.8
         #if self.count < (tau / dt) + 1:
         F = self.goal_runner.step(tau,dt,self.player.state,f_env)
 
         self.time0 = time.time()
         #time.sleep(0.1)
-        return F
+        return 0.05*F
 
 if __name__ == '__main__':
     haptic = HapticController()
