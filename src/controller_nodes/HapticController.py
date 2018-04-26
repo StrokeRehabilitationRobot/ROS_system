@@ -74,15 +74,15 @@ class HapticController():
         if self.useing_guide:
             F = self.calc_dmp(f_wall)
             #print "jksfhdklsajfhdjksad"
-            self.player.move(np.add(0, F), haptic.obstacles)
-            self.player.state[0] = np.asscalar(F[0])#self.goals[self.goal_index][1]# np.asscalar(F[2])
-            self.player.state[1] = np.asscalar(F[1])
-            self.player.state[2] = np.asscalar(F[2])
-            self.player.update()
+            # self.player.move(np.add(0, F), haptic.obstacles)
+            # self.player.state[0] = np.asscalar(F[0])#self.goals[self.goal_index][1]# np.asscalar(F[2])
+            # self.player.state[1] = np.asscalar(F[1])
+            # self.player.state[2] = np.asscalar(F[2])
+            # self.player.update()
             #rint "input",(np.asscalar(F[0]), np.asscalar(F[1]))
            # print  "output" ,self.player.state[0:3]
             print "--------------------------------"
-            #self.player.move(np.add(0 ,F),haptic.obstacles)
+            self.player.move(np.add(0 ,F),haptic.obstacles)
 
         else:
             self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
