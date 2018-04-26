@@ -99,7 +99,6 @@ class HapticController():
         """
         self.useing_guide = True
         min_dist = 1000000000000000000
-        min_index = 0
         index = 0
         for point in msg.poses:
 
@@ -109,10 +108,10 @@ class HapticController():
             if dist < min_dist:
                 min_dist = dist
                 min_index = index
-            index += 1
+            index += min_index
             self.goals.append((px,py))
 
-        self.goal_index = 1
+        self.goal_index = 1#min_index
         #print len(self.goals)
         (x,y) =  maze_helper.task_to_game(*self.goals[self.goal_index ])
         dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
@@ -172,7 +171,7 @@ class HapticController():
 
         self.time0 = time.time()
         #time.sleep(0.1)
-        return 0.08*F
+        return 0.1*F
 
 if __name__ == '__main__':
     haptic = HapticController()
