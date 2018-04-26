@@ -172,7 +172,7 @@ class HapticController():
 
         self.time0 = time.time()
         #time.sleep(0.1)
-        return 0.05*F
+        return 0.08*F
 
 if __name__ == '__main__':
     haptic = HapticController()
