@@ -80,7 +80,7 @@ def torque_callback(force):
         else:
             motor.append(1)
 
-    packet = tools.helper.make_motor_packet(motor,tau,vib,board)
+    packet = tools.helper.make_motor_packet(motor,tau,force.vibration,board)
 
     udp_callback(packet)
 

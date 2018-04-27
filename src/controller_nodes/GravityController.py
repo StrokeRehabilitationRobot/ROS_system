@@ -39,6 +39,7 @@ class GravityController():
         output_force.wrench.force.x = force.wrench.force.x + beta * f_grav[0]
         output_force.wrench.force.y = force.wrench.force.y + beta * f_grav[1]
         output_force.wrench.force.z = force.wrench.force.z + beta * f_grav[2]
+        output_force.vibration = force.vibration
         self.pub_forces.publish(output_force)
 
 

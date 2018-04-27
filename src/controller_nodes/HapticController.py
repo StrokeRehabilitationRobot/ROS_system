@@ -69,6 +69,7 @@ class HapticController():
         (position, velocity, load) = tools.helper.call_return_joint_states()
 
         f_wall = self.environment.make_force(self.player,haptic)
+        vib = int(abs(np.sum(f_wall)) > 0)
         f_arm = self.calc_arm_input(position, velocity)
         f_goal = np.array([[0],[0],[0]])
         if self.useing_guide:
@@ -84,10 +85,11 @@ class HapticController():
         alpha_wall = -0.005
         alpha_goal =  0.000005
         output_force = udpTorque()
-        #output_force.header.frame_id = "base_link"
+        output_force.header.frame_id = "base_link"
         output_force.wrench.force.x = alpha_wall * f_wall[2] + alpha_goal * f_goal[2]
         output_force.wrench.force.y = alpha_wall * f_wall[0] + alpha_goal * f_goal[0]
         output_force.wrench.force.z = alpha_wall * f_wall[1] + alpha_goal * f_goal[1]
+        output_force.vibration = vib
         self.pub_forces.publish(output_force)
 
 

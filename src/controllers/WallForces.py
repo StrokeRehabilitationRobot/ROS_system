@@ -37,8 +37,8 @@ class WallForces():
             #print "d", d
             if (max(self.d_obs - d, 0)) != 0:
                 F = self.k_obs * (max(self.d_obs - d, 0))
-                f_y += -round(F * math.sin(theta), 2) - round(self.b_obs*(player.state[4]),2)
-                f_x +=  round(F * math.cos(theta), 2) - round(self.b_obs*(player.state[5]),2)
+                f_y += -round(F * math.sin(theta), 2) + round(self.b_obs*(player.state[4]),2)
+                f_x +=  round(F * math.cos(theta), 2) + round(self.b_obs*(player.state[5]),2)
 
         if abs(f_y) > abs(f_x):
             f_x = 0
@@ -60,7 +60,7 @@ class WallForces():
 
         f_z = 0
 
-        f_tip = np.asarray([[round(f_z, 1)], [-round(f_x, 1)], [round(f_y, 1)]])
+        f_tip = np.asarray([[round(f_z, 1)], [-round(f_x, 1)], [-round(f_y, 1)]])
 
         return f_tip
 
