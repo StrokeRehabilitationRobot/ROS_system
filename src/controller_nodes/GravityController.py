@@ -17,8 +17,8 @@ class GravityController():
 
         """
         rospy.init_node("gravity_controller")
-        rospy.Subscriber("haptic_force", WrenchStamped, self.add_gravity)
-        self.pub_forces = rospy.Publisher("torque_server", WrenchStamped, queue_size=1)
+        rospy.Subscriber("haptic_force", udpTorque, self.add_gravity)
+        self.pub_forces = rospy.Publisher("torque_server", udpTorque, queue_size=1)
         grav_K = np.eye(3)
         grav_K[0][0] = 0.0009
         grav_K[1][1] = -0.00005
@@ -31,7 +31,7 @@ class GravityController():
         :param force:
         :return:
         """
-        output_force = WrenchStamped()
+        output_force = udpTorque()
         output_force.header.frame_id = "base_link"
         (position, velocity, load) = tools.helper.call_return_joint_states()
         f_grav = self.controller.get_tau(position)

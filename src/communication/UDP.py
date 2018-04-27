@@ -40,17 +40,3 @@ class UDP(object):
         return array.array('f',data )
 
 
-
-
-#
-# udp = UDP(9876)
-#
-# theta =  3.14
-# vel = 0
-# accel = 0
-#
-# packet = 4*[0,0,0]
-# t0 = time.time()
-# udp.send_packet(1,37,packet)
-# t1 = time.time()
-# print (t1-t0)*1000

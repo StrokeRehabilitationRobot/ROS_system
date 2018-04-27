@@ -55,7 +55,7 @@ class HapticController():
         self.prev_angles = np.asarray(position).reshape(3,1)
 
         rospy.Subscriber("enviroment", hapticForce, self.make_forces_callback)
-        self.pub_forces = rospy.Publisher("haptic_force", WrenchStamped, queue_size=1)
+        self.pub_forces = rospy.Publisher("haptic_force", udpTorque, queue_size=1)
         rospy.Subscriber("a_star", Path, self.path_callback)
 
     def make_forces_callback(self, haptic):
@@ -73,8 +73,8 @@ class HapticController():
         f_goal = np.array([[0],[0],[0]])
         if self.useing_guide:
             f_goal = self.calc_dmp(f_wall)
-            f_ext = np.add(0,f_goal)
-            f_total = np.add(f_ext,0)
+            f_ext = np.add(f_wall,f_goal)
+            f_total = np.add(f_ext,f_arm)
             self.player.move(f_total,haptic.obstacles)
         else:
             self.player.move(np.add(f_wall ,f_arm),haptic.obstacles)
@@ -82,9 +82,9 @@ class HapticController():
 
         #output forces to arm
         alpha_wall = -0.005
-        alpha_goal = -0.05
-        output_force = WrenchStamped()
-        output_force.header.frame_id = "base_link"
+        alpha_goal =  0.000005
+        output_force = udpTorque()
+        #output_force.header.frame_id = "base_link"
         output_force.wrench.force.x = alpha_wall * f_wall[2] + alpha_goal * f_goal[2]
         output_force.wrench.force.y = alpha_wall * f_wall[0] + alpha_goal * f_goal[0]
         output_force.wrench.force.z = alpha_wall * f_wall[1] + alpha_goal * f_goal[1]
@@ -100,6 +100,7 @@ class HapticController():
         self.useing_guide = True
         min_dist = 1000000000000000000
         index = 0
+
         for point in msg.poses:
 
             (px,py) = maze_helper.game_to_task(30*point.pose.position.x+10,30*point.pose.position.y+10)
@@ -111,17 +112,13 @@ class HapticController():
             index += min_index
             self.goals.append((px,py))
 
-        self.goal_index = 1#min_index
+        self.goal_index = min_index
         #print len(self.goals)
-        (x,y) =  maze_helper.task_to_game(*self.goals[self.goal_index ])
         dmp_file = DMP.dmp_chooser((self.player.state[1],self.player.state[2]),self.goals[self.goal_index ])
         print dmp_file
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-        #print self.goals[self.goal_index]
-        #print  list( self.goals[self.goal_index])
         goal = list(self.goals[self.goal_index])#.append(self.player.state[0])
         goal.append( np.asscalar(self.player.state[0]) )
-
         self.goal_runner.update_dmp_file(full_path + dmp_file, (self.player.state[1],self.player.state[2],self.player.state[0]),goal )
 
 
@@ -144,6 +141,7 @@ class HapticController():
 
 
     def calc_dmp(self,f_env):
+        """"""
 
         self.time0 = time.time()
         (x,y) = (self.goals[self.goal_index][0],self.goals[self.goal_index][1])
@@ -151,7 +149,7 @@ class HapticController():
         dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         #print "goal", self.goals[self.goal_index ]
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-        if dist < 0.005:
+        if dist < 0.02:
 
             self.goal_index += 1
             print self.goal_index
