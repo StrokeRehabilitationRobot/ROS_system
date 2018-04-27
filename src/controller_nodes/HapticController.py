@@ -83,7 +83,7 @@ class HapticController():
 
         #output forces to arm
         alpha_wall = -0.005
-        alpha_goal =  0.000005
+        alpha_goal =  0.000009
         output_force = udpTorque()
         output_force.header.frame_id = "base_link"
         output_force.wrench.force.x = alpha_wall * f_wall[2] + alpha_goal * f_goal[2]
@@ -151,8 +151,8 @@ class HapticController():
         dist = tools.helper.distance((self.player.state[1], self.player.state[2]),(x,y) )
         #print "goal", self.goals[self.goal_index ]
         full_path = '/home/cibr-strokerehab/CIBR_ws/src/strokeRehabSystem/xml_motion_data/'
-        if dist < 0.02:
 
+        if dist < 0.02 and self.goal_index < len(self.goals)  - 1:
             self.goal_index += 1
             print self.goal_index
             self.count = 0
