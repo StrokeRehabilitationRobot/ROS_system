@@ -85,7 +85,7 @@ class Repulisive_Function():
 
         if dist <= self.Q_star:
             U = self.eta * ((1.0 / self.Q_star) - (1.0 / dist)) * (nabla_dist/(dist*dist))
-            print U
+
         else:
             U = np.array([[0],[0]])
 

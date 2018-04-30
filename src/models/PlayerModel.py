@@ -6,6 +6,7 @@ import time
 import math
 import games.maze.maze_helper as maze_helper
 from geometry_msgs.msg import Pose,Point, WrenchStamped
+from strokeRehabSystem.msg import *
 
 class PlayerModel():
 
@@ -14,7 +15,7 @@ class PlayerModel():
         self.mass = mass
         self.state  = np.array([[pose[0]], [pose[1]], [pose[2]], [0], [0], [0]])
         self.time0 = time.clock()
-        self.pub_player = rospy.Publisher('Player', Point, queue_size=1)
+        self.pub_player_state = rospy.Publisher('Player_State', PlayerState, queue_size=1)
 
 
     def move(self,F, obs):
@@ -37,19 +38,57 @@ class PlayerModel():
         A[0,3] = dt
         A[1,4] = dt
         A[2,5] = dt
-
-
+        v_max = 0.5
         old_state = self.state
         self.state = np.dot(A,self.state) + np.dot(B,xdd)
+        self.state[3] = max(-v_max, min(self.state[3], v_max))
+        self.state[4] = max(-v_max, min(self.state[4], v_max))
+        self.state[5] = max(-v_max, min(self.state[5], v_max))
         self.detect_collision(obs)
 
-        self.time0 = time.clock()
-        player = Point()
-        player.x = self.state[1]
-        player.y = self.state[2]
-        player.z = self.state[0]
-        self.pub_player.publish(player)
+        msg = PlayerState()
 
+        msg.pose.position.x = self.state[1]
+        msg.pose.position.y = self.state[2]
+        msg.pose.position.z = self.state[0]
+
+        msg.vel.linear.x = self.state[5]
+        msg.vel.linear.y = self.state[4]
+        msg.vel.linear.z = self.state[3]
+
+        msg.accel.linear.x = xdd[1]
+        msg.accel.linear.y = xdd[2]
+        msg.accel.linear.z = xdd[0]
+
+        self.time0 = time.clock()
+        self.pub_player_state.publish(msg)
+
+
+    def stop(self):
+
+        self.state[5] = 0
+        self.state[4] = 0
+        self.state[3] = 0
+
+
+    def update(self):
+
+        msg = PlayerState()
+
+        msg.pose.position.x = self.state[1]
+        msg.pose.position.y = self.state[2]
+        msg.pose.position.z = self.state[0]
+
+        msg.vel.linear.x = self.state[5]
+        msg.vel.linear.y = self.state[4]
+        msg.vel.linear.z = self.state[3]
+
+        msg.accel.linear.x = 0
+        msg.accel.linear.y = 0
+        msg.accel.linear.z = 0
+
+        self.time0 = time.clock()
+        self.pub_player_state.publish(msg)
 
     def detect_collision(self, obstacles):
         # Move the rect
@@ -64,10 +103,9 @@ class PlayerModel():
             wall_game.append(maze_helper.task_to_game(obs.x,obs.y) )
 
         walls = map(maze_helper.point_to_rect, wall_game)
-        print "walls", wall_game
         fixed_x = False
         fixed_y = False
-
+        #
         for wall in walls:
 
             if player.colliderect(wall):
@@ -77,27 +115,21 @@ class PlayerModel():
                     x, y = maze_helper.game_to_task(wall.right+maze_helper.PLAYERSIZE_X, 0 )
                     self.state[1] = x #+ 0.005
                     self.state[4] = 0
-                    print "left"
 
                 if player.centerx < wall.centerx and player.centery == wall.centery:
                     x, y = maze_helper.game_to_task(wall.left - maze_helper.PLAYERSIZE_X, 0)
                     self.state[1] = x  # + 0.005
                     self.state[4] = 0
-                    print "right"
 
                 if player.centerx == wall.centerx and player.centery > wall.centery:
                     x, y = maze_helper.game_to_task(0,wall.bottom + maze_helper.PLAYERSIZE_Y)
                     self.state[2] = y
                     self.state[5] = 0
-                    print "bottom"
 
                 if player.centerx == wall.centerx and player.centery < wall.centery:
                     x, y = maze_helper.game_to_task(0,wall.top - maze_helper.PLAYERSIZE_Y)
                     self.state[2] = y
                     self.state[5] = 0
-                    print "top"
 
 
 
-        print count
-        print "_______________________________________"

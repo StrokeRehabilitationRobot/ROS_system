@@ -13,12 +13,11 @@ class GravityCompensationController():
         self.K = k
         pass
 
-    def get_tau(self, q, load):
+    def get_tau(self,q):
 
-        activate_grav = self.moving(load)
         g = dynamics.make_gravity_matrix(q)
         M = dynamics.mass_matrix(q)
-        temp = self.K*np.linalg.inv(M) * g
+        temp = self.K* g
         if True:
             u = np.linalg.inv(dynamics.get_J_tranpose(q))*temp
         else:

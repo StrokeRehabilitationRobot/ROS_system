@@ -72,14 +72,15 @@ def torque_callback(force):
     tau = np.array(J).dot(np.array(F).reshape(3, 1))
     tau = np.multiply(tau, np.asarray([[-1], [1], [1]]))
     tau = np.round(tau,4)
-    print "forces going to joints", tau
-
+    print tau
+    vib = 1
     for i in tau:
         if i == 0:
             motor.append(0)
         else:
             motor.append(1)
-    packet = tools.helper.make_motor_packet(motor,tau,1,board)
+
+    packet = tools.helper.make_motor_packet(motor,tau,force.vibration,board)
 
     udp_callback(packet)
 
@@ -104,11 +105,11 @@ def status_callback(msg):
 def udp_server():
     rospy.init_node('udp_server')
     rospy.Subscriber("udp", udpMessage, udp_callback)
-    rospy.Subscriber("torque_server", WrenchStamped, torque_callback)
+    rospy.Subscriber("torque_server", udpTorque, torque_callback)
     #rospy.Subscriber("motors_server", Vector3Stamped, motors_callback)
     rospy.Subscriber("pid_server", JointState, pid_callback)
     rospy.Timer(rospy.Duration(0.001), status_callback)
-    forces = WrenchStamped()
+    forces = udpTorque()
     forces.header.frame_id = "master"
     [forces.wrench.force.x, forces.wrench.force.y, forces.wrench.force.z] = [0,0,0]
     torque_callback(forces)
