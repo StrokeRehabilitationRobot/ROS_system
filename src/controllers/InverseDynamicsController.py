@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-
+"""
+ NOT IMPLEMENTED
+"""
 from tools import dynamics
 from tools import Robot
 import copy

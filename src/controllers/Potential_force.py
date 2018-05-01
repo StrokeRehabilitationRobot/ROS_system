@@ -1,6 +1,9 @@
 import math
 import numpy as np
 
+"""
+not used
+"""
 
 class Attractive_Function():
 

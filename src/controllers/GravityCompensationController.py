@@ -1,33 +1,46 @@
 #!/usr/bin/env python
+"""
+    Gravity compensated controller
+"""
 
 from tools import dynamics
-from tools import Robot
-import copy
 import numpy as np
 
 
-class GravityCompensationController():
+class GravityCompensationController:
+    """
+    Gravity controller
+    """
 
     def __init__(self, k):
-        self._prev = None
+        """"
+        :param k: gain
+        :type np.matrix
+        """
         self.K = k
-        pass
 
-    def get_tau(self,q):
+    def get_tau(self, q):
+        """
+        Calcualte the torque to compensate for gravity
+
+        :param q: joint angles
+        :type q: np.array
+        :return: force vector (x,y,z)
+        :type: np.array
+        """
 
         g = dynamics.make_gravity_matrix(q)
-        M = dynamics.mass_matrix(q)
-        temp = self.K* g
-        if True:
-            u = np.linalg.inv(dynamics.get_J_tranpose(q))*temp
-        else:
-            u = np.array([[0],[0],[0]])
+        tau = self.K * g
+        u = np.linalg.inv(dynamics.get_J_tranpose(q)) * tau
+
         return u
 
-    def update_K(self, k):
+    def update_k(self, k):
+        """
+        changee the gain
+
+        :param k: gain
+        :type k: np.matrix
+        :return: None
+        """
         self.K = k
-
-
-    def moving(self,load):
-
-        return not( load[1] < 0.46 or load[1] > 0.53)

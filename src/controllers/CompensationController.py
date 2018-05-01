@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+"""
+ NOT currently used
+"""
 
-from Dynamics import Dynamics
-from Main.Robot import Robot
 import copy
 import numpy as np
 

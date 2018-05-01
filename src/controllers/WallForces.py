@@ -1,14 +1,10 @@
+"""
+    Nathaniel Goldfarb
+"""
 import sys
-import rospy
 from strokeRehabSystem.msg import *
-from geometry_msgs.msg import Pose, Point, WrenchStamped
 import math
 import numpy as np
-from math import sin as sin
-from math import cos as cos
-import games.maze.maze_helper as maze_helper
-import tools.dynamics
-import tf
 
 
 class WallForces():
@@ -46,17 +42,10 @@ class WallForces():
             f_y = 0
         # Need distance between player and walls
         d = player.state[0] - 0.05
-        #print "d ",d
+
         if (max(0.01 - d, 0)) != 0:
             F = self.k_obs * 1000 * (0.01 - d)
             f_z = round(F, 2) + self.b_obs * (player.state[3])
-
-        d = 0.35 - player.state[0]
-        # print "d ",d
-        if (max(0.005 - d, 0)) != 0:
-            F = 20000 * (0.005 - d)
-            f_z = (round(F, 2) + 500 * (player.state[3]))
-            #print "f_z", f_z
 
         f_z = 0
 

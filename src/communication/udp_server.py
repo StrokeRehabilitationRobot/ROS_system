@@ -2,7 +2,10 @@
 from sensor_msgs.msg import JointState
 from strokeRehabSystem.srv import *
 import rospy
-
+"""
+    nathaniel Goldfarb
+    DEPERCATED
+"""
 udp = None
 
 def handle_usp(req):
