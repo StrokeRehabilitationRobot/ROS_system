@@ -28,9 +28,13 @@ def udp_callback(downstream):
     state.header = Header()
     state.header.stamp = rospy.Time.now()
 
-    state.name = ['master_joint0', 'master_joint1', 'master_joint2']
+    if downstream.board == 0:
+        state.name = ['master_joint0', 'master_joint1', 'master_joint2']
+    else:
+        state.name = ['slave_joint0', 'slave_joint1', 'slave_joint2']
 
     for i in xrange(3):
+
         q.append(-round(tools.helper.encoder_to_angle(upstream[i * 3 + 0 + 1]), 2))
         qd.append(round(tools.helper.encoder_to_angle(upstream[i * 3 + 1 + 1]), 2))
         tau.append(upstream[i * 3 + 2 + 1])
@@ -60,11 +64,12 @@ def torque_callback(force):
 
     motor = []
     (position, velocity, effort) = tools.helper.call_return_joint_states()
+    #
+    # if force.header.frame_id == "slave":
+    #     board = 1
+    # else:
+    #     board = 0
 
-    if force.header.frame_id == "slave":
-        board = 1
-    else:
-        board = 0
 
     F = [force.wrench.force.x,force.wrench.force.y,force.wrench.force.z]
     J = tools.dynamics.get_J_tranpose(position)
@@ -80,7 +85,7 @@ def torque_callback(force):
         else:
             motor.append(1)
 
-    packet = tools.helper.make_motor_packet(motor,tau,force.vibration,board)
+    packet = tools.helper.make_motor_packet(motor,tau,force.vibration,force.board)
 
     udp_callback(packet)
 
@@ -99,6 +104,8 @@ def pid_callback(joint):
 def status_callback(msg):
 
     packet = tools.helper.make_status_packet()
+    udp_callback(packet)
+    packet = tools.helper.make_status_packet(1)
     udp_callback(packet)
 
 
