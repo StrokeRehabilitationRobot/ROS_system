@@ -28,7 +28,7 @@ def udp_callback(downstream):
     state.header = Header()
     state.header.stamp = rospy.Time.now()
 
-    if downstream.board:
+    if downstream.board == 0:
         state.name = ['master_joint0', 'master_joint1', 'master_joint2']
     else:
         state.name = ['slave_joint0', 'slave_joint1', 'slave_joint2']
@@ -104,6 +104,8 @@ def pid_callback(joint):
 def status_callback(msg):
 
     packet = tools.helper.make_status_packet()
+    udp_callback(packet)
+    packet = tools.helper.make_status_packet(1)
     udp_callback(packet)
 
 
