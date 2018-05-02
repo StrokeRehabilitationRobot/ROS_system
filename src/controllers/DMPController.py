@@ -32,6 +32,7 @@ class DMPController(object):
         self.runner_z = dmp.Mod_DMP_runner(self.file + "_z.xml", np.asscalar( start[2]), goal[2])
         self.last_dmp = 3*[0]
         self.err = [0,0,0]
+
     def step(self, tau, dt,state, force=np.array([[0],[0],[0]])):
         """
 

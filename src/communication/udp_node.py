@@ -102,15 +102,17 @@ def pid_callback(joint):
 
 
 def status_callback(msg):
-
+    two_arm = rospy.get_param('two_arms', False)
     packet = tools.helper.make_status_packet()
     udp_callback(packet)
-    packet = tools.helper.make_status_packet(1)
-    udp_callback(packet)
+    if two_arm:
+        packet = tools.helper.make_status_packet(1)
+        udp_callback(packet)
 
 
 def udp_server():
     rospy.init_node('udp_server')
+
     rospy.Subscriber("udp", udpMessage, udp_callback)
     rospy.Subscriber("torque_server", udpTorque, torque_callback)
     #rospy.Subscriber("motors_server", Vector3Stamped, motors_callback)

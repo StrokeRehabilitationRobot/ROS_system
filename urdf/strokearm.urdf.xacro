@@ -4,7 +4,7 @@
 
 <xacro:include filename="hephaestus.urdf.xacro"/>
 
-<xacro:arg name="twoArm" default="true"/>
+<xacro:arg name="two_arm" default="false"/>
 
 
 <link name="base_link">
@@ -14,7 +14,7 @@
 </link>
 <xacro:hephaestus prefix="master" reflect="0" />
 
-<xacro:if value="$(arg twoArm)">
+<xacro:if value="$(arg two_arm)">
   <xacro:hephaestus prefix="slave" reflect="1" />
 </xacro:if>
 <!-- <xacro:hephaestus prefix="slave" reflect="-1" /> -->
