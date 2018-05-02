@@ -8,8 +8,9 @@ from nav_msgs.msg import OccupancyGrid
 
 maze_pub = rospy.Publisher('gen_maze', OccupancyGrid, queue_size=1, latch=True)
 
-def make_maze(msg):
-    maze_names = ["box1", "maze1","maze2","maze3","maze4","maze5","maze6","maze7","maze8","maze9","maze10"]
+
+def make_maze():
+    maze_names = ["box1", "maze1", "maze2", "maze3", "maze4", "maze5", "maze6", "maze7", "maze8", "maze9", "maze10"]
     rand = np.random.randint(0, len(maze_names))
     maze = mazeBank.getmaze(maze_names[rand])
 
@@ -24,11 +25,12 @@ def make_maze(msg):
     my_maze.header.stamp = rospy.Time.now()
     maze_pub.publish(my_maze)
 
+
 if __name__ == '__main__':
 
     rospy.init_node("maze_launch")
     rospy.Subscriber("at_goal", Bool, make_maze)
-    make_maze(Bool())
+    make_maze()
 
     while not rospy.is_shutdown():
         rospy.spin()
