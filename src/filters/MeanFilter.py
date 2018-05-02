@@ -1,12 +1,28 @@
+"""
+    Nathaniel Goldfarb
+
+    Mean filter for joints
+"""
 from collections import deque
-import numpy as np
+from numpy import sum
 
-class MeanFilter():
 
-    def __init__(self,size):
+class MeanFilter:
 
-         self.sample_window = deque([], size)
+    def __init__(self, size):
+        """
 
-    def update(self,new_sample):
+        :param size: window size
+        :type size: int
+
+        """
+        self.sample_window = deque([], size)
+
+    def update(self, new_sample):
+        """
+        take in the new value and appends it to the list then returns the average value
+        :param new_sample: new sample to add to the queue
+        :return: average value
+        """
         self.sample_window.append(new_sample)
-        return np.sum(self.sample_window, 0)/len(self.sample_window)
+        return sum(self.sample_window, 0) / len(self.sample_window)

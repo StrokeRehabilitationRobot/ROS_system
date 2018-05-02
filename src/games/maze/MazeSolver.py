@@ -14,8 +14,8 @@ from pygame.locals import *
 
 def a_star(maze):
     # find shortest path with fastest search
-    start = maze_helper.getStart(maze) #column, row
-    goal = maze_helper.getGoal(maze) #column, row
+    start = maze_helper.get_start(maze) #column, row
+    goal = maze_helper.get_goal(maze) #column, row
     print "start", start
     print  "goal", goal
     print "width", maze.info.width

@@ -1,23 +1,31 @@
 #!/usr/bin/env python
+"""
+    Alexandra Valton
 
+    This node handles the segmentation of A*
+
+"""
 import Queue
 import maze_helper
 import mazeBank
 from nav_msgs.msg import OccupancyGrid, Path
 from geometry_msgs.msg import PoseStamped
 
-def costmove(current, next, prev):
-    if (prev is None) or (next is None):
+
+def costmove(current_node, next_node, prev_node):
+    if (prev_node is None) or (next_node is None):
         return 1
-    elif (next[0] == current[0] and current[0] == prev[0]) or (next[1] == current[1] and current[1] == prev[1]):
+    elif (next_node[0] == current_node[0] and current_node[0] == prev_node[0]) or (next_node[1] == current_node[1] and current_node[1] == prev_node[1]):
         return 1
     else:
         return 5
+
 
 def heuristic(a, b):
     (x1, y1) = a
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
+
 
 if __name__ == '__main__':
 
@@ -34,8 +42,8 @@ if __name__ == '__main__':
     my_maze.info.height = row
 
     # Find solution to maze
-    start = maze_helper.getStart(my_maze) #column, row
-    goal = maze_helper.getGoal(my_maze) #column, row
+    start = maze_helper.get_start(my_maze)  # column, row
+    goal = maze_helper.get_goal(my_maze)  # column, row
     frontier = Queue.PriorityQueue()
     frontier.put(start)
     came_from = {}
@@ -56,28 +64,28 @@ if __name__ == '__main__':
     # Reconstruct solution path
     current = goal
     my_path = Path()
-    #this_step = PoseStamped()
+    # this_step = PoseStamped()
     step_index = 0
     while current != start:
         my_path.poses.append(PoseStamped())
         my_path.poses[step_index].pose.position.x = current[0]
         my_path.poses[step_index].pose.position.y = current[1]
         my_path.poses[step_index].pose.position.z = 0
-        #this_step.header.stamp = rospy.Time.now()
+        # this_step.header.stamp = rospy.Time.now()
         current = came_from[current]
         step_index += 1
-        #print my_path.poses[-1]
+        # print my_path.poses[-1]
     my_path.poses.append(PoseStamped())
     my_path.poses[step_index].pose.position.x = start[0]
     my_path.poses[step_index].pose.position.y = start[1]
     my_path.poses[step_index].pose.position.z = 0
-    my_path.poses.reverse() # optional
+    my_path.poses.reverse()  # optional
 
-    #print my_path
+    # print my_path
     # Break path into segments
     segment_i = 0
     segments = [[]]
-    #print my_path.poses
+    # print my_path.poses
     for index, step in enumerate(my_path.poses):
         if index == 0:
             prev = step
@@ -89,19 +97,21 @@ if __name__ == '__main__':
         except IndexError:
             next = step
 
-        print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)")\
-             %(prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y, next.pose.position.x, next.pose.position.y)
+        # print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
+        #      % (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
+        #         next.pose.position.x, next.pose.position.y)
 
         if (prev is None) or (next is None):
             print("end-bit")
             segments[segment_i].append(step.pose)
-        elif (next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
-                or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y):
+        elif not (not (
+                next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) and not step.pose.position.y == next.pose.position.y or not (
+                step.pose.position.y == prev.pose.position.y)):
             print("straight")
             segments[segment_i].append(step)
         else:
             print("turn")
-            if segments[segment_i] != []:
+            if segments[segment_i]:
                 segments.append([])
                 segment_i += 1
             segments[segment_i].append(prev)
