@@ -4,7 +4,7 @@
 """
 import sys
 import rospy
-from numpy.core.multiarray import ndarray
+from strokeRehabSystem.srv import ReturnJointStates
 import numpy as np
 from geometry_msgs.msg import Pose, Point, WrenchStamped
 import pygame

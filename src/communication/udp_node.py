@@ -104,8 +104,8 @@ def status_callback(msg):
 
     packet = tools.helper.make_status_packet()
     udp_callback(packet)
-    packet = tools.helper.make_status_packet(1)
-    udp_callback(packet)
+    # packet = tools.helper.make_status_packet(1)
+    # udp_callback(packet)
 
 
 def udp_server():

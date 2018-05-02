@@ -8,4 +8,4 @@ setup_args = generate_distutils_setup(
     packages=['strokeRehabSystem'],
     package_dir={'': 'src'})
 
-setup(**setup_args, requires=['numpy'])
+setup(**setup_args)

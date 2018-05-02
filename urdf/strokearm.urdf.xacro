@@ -4,7 +4,7 @@
 
 <xacro:include filename="hephaestus.urdf.xacro"/>
 
-<xacro:arg name="twoArm" default="true"/>
+<xacro:arg name="twoArm" default="false"/>
 
 
 <link name="base_link">

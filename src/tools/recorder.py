@@ -22,11 +22,18 @@ def state_callback(msg):
 
 
 def goal_callback(msg):
+    """
+    Stop on goal readh
+    :param msg: goal message
+    :type msg: Bool()
+    :return:
+    """
     global at_goal
     global states
 
     at_goal = True == msg.data
     print "saving"
+    # TODO pass in file name
     with open("down2.csv", "w") as FILE:
         writer1 = csv.writer(FILE)
         writer1.writerow(['x', 'y', 'z', 'xd', 'yd', 'zd', 'xdd', 'ydd', 'zdd'])
@@ -36,6 +43,12 @@ def goal_callback(msg):
 
 
 def start_callback(msg):
+    """
+    callback to start recording
+    :param msg: start message
+    :type: Bool()
+    :return:
+    """
     global at_start
     print "Start"
     at_start = True == msg.data
