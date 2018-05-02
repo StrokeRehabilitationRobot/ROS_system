@@ -60,10 +60,10 @@ def torque_callback(force):
     motor = []
     (position, velocity, effort) = tools.helper.call_return_joint_states()
 
-    F = [force.wrench.force.x, force.wrench.force.y, force.wrench.force.z]
-    J = tools.dynamics.get_J_tranpose(position)
+    f = [force.wrench.force.x, force.wrench.force.y, force.wrench.force.z]
+    j = tools.dynamics.get_J_tranpose(position)
 
-    tau = np.array(J).dot(np.array(F).reshape(3, 1))
+    tau = np.array(j).dot(np.array(f).reshape(3, 1))
     tau = np.multiply(tau, np.asarray([[-1], [1], [1]]))
     tau = np.round(tau, 4)
 

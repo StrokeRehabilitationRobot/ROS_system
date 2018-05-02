@@ -31,9 +31,9 @@ def angle_to_encoder(angle):
 def make_pid_packet(joint, vib=0, board=0):
     """
 
+    :type vib: object
+    :param joint:
     :param q: joint values
-    :param qd: joint vels values
-    :param tau: torque vals
     :return:
     """
     packet_id = 37
@@ -60,8 +60,8 @@ def make_status_packet(board=0):
     """
     packet = 15 * [0.0]
     msg = udpMessage()
-    id = 38
-    msg.id = id
+    packet_id = 38
+    msg.id = packet_id
     msg.packet = packet
     msg.board = board
     return msg
@@ -117,7 +117,7 @@ def call_return_joint_states():
         print "error when calling return_joint_states: %s" % e
         sys.exit(1)
     for (ind, joint_name) in enumerate(joint_names):
-        if (not resp.found[ind]):
+        if not resp.found[ind]:
             pass
             # print "joint %s not found!"%joint_name
     return resp.position, resp.velocity, resp.effort
@@ -130,10 +130,10 @@ def norm_tau(u):
     """
     tau = [0, 0, 0]
     newRange = [0.0, 2.50]
-    j2_oldRange = [0.001, 0.45]
+    j2_old_range = [0.001, 0.45]
     tau[0] = u[0]  # np.interp(u[0], [ -.1, .1   ], [ 0,2.5])
     tau[1] = -u[1]  # np.interp(u[1], j1_oldRange, newRange)
-    tau[2] = np.interp(u[2], j2_oldRange, newRange)
+    tau[2] = np.interp(u[2], j2_old_range, newRange)
     return tau
 
 

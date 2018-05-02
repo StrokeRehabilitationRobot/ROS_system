@@ -12,14 +12,11 @@ from geometry_msgs.msg import PoseStamped
 import rospy
 from pygame.locals import *
 
+
 def a_star(maze):
     # find shortest path with fastest search
-    start = maze_helper.get_start(maze) #column, row
-    goal = maze_helper.get_goal(maze) #column, row
-    print "start", start
-    print  "goal", goal
-    print "width", maze.info.width
-    print "height", maze.info.height
+    start = maze_helper.get_start(maze)  # column, row
+    goal = maze_helper.get_goal(maze)  # column, row
     frontier = Queue.PriorityQueue()
     frontier.put(start)
     came_from = {}
@@ -31,13 +28,13 @@ def a_star(maze):
     while not frontier.empty():
         current = frontier.get()
 
-        for next in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
-            new_cost = cost_so_far[current] + costmove(maze, current, next, came_from[current])
-            if next not in cost_so_far or new_cost < cost_so_far[next]:
-                cost_so_far[next] = new_cost
-                priority = new_cost + heuristic(goal, next)
-                frontier.put(next, priority)
-                came_from[next] = current
+        for next_node in maze_helper.neighbors_manhattan(maze, current[0], current[1]):
+            new_cost = cost_so_far[current] + costmove(maze, current, next_node, came_from[current])
+            if next_node not in cost_so_far or new_cost < cost_so_far[next_node]:
+                cost_so_far[next_node] = new_cost
+                priority = new_cost + heuristic(goal, next_node)
+                frontier.put(next_node, priority)
+                came_from[next_node] = current
 
     current = goal
     my_path = Path()
@@ -48,7 +45,7 @@ def a_star(maze):
         my_path.poses[step_index].pose.position.x = current[0]
         my_path.poses[step_index].pose.position.y = current[1]
         my_path.poses[step_index].pose.position.z = 0
-        #this_step.header.stamp = rospy.Time.now()
+        # this_step.header.stamp = rospy.Time.now()
         current = came_from[current]
         step_index += 1
     my_path.poses.append(PoseStamped())
@@ -58,6 +55,7 @@ def a_star(maze):
     my_path.poses.reverse()
     print("solved")
     return my_path
+
 
 def break_into_segments(my_path):
     # Break path into segments
@@ -75,17 +73,17 @@ def break_into_segments(my_path):
         except IndexError:
             next = step
 
-        #print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
-             #% (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
-                #next.pose.position.x, next.pose.position.y)
+            # print("Prev: (%d, %d), Step: (%d, %d), Next: (%d, %d)") \
+            # % (prev.pose.position.x, prev.pose.position.y, step.pose.position.x, step.pose.position.y,
+            # next.pose.position.x, next.pose.position.y)
 
         if (next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
                 or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y):
-            #print("straight")
+            # print("straight")
             segments[segment_i].append(step)
         else:
-            #print("turn")
-            if segments[segment_i] != []:
+            # print("turn")
+            if segments[segment_i]:
                 segments.append([])
                 segment_i += 1
             segments[segment_i].append(prev)
@@ -94,6 +92,7 @@ def break_into_segments(my_path):
             segments.append([])
             segment_i += 1
     return segments
+
 
 def costmove(maze, current, next, prev):
     cost = 0
@@ -105,9 +104,11 @@ def costmove(maze, current, next, prev):
         cost += 5
 
     num_neighbors = len(maze_helper.neighbors_manhattan(maze, next[0], next[1]))
-    cost = cost + 16 - (4*num_neighbors) # add cost for every wall neighbor
+    cost = cost + 16 - (4 * num_neighbors)  # add cost for every wall neighbor
 
     return cost
+
+
 def break_into_lean_segments(my_path):
     # Break path into segments
     segments = Path()
@@ -119,27 +120,30 @@ def break_into_lean_segments(my_path):
         else:
             prev = my_path.poses[index - 1]
         try:
-            next = my_path.poses[index + 1]
+            next_node = my_path.poses[index + 1]
         except IndexError:
-            next = step
+            next_node = step
 
-        if not ((next.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) \
-                or (next.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y)):
+        if not (
+                next_node.pose.position.x == step.pose.position.x and step.pose.position.x == prev.pose.position.x) and not (
+                        next_node.pose.position.y == step.pose.position.y and step.pose.position.y == prev.pose.position.y):
             segments.poses.append(prev)
-            segments.poses.append(next)
+            segments.poses.append(next_node)
 
     return segments
+
 
 def get_attractor_list(segments, assistance):
     attractors = Path()
     for segment in segments:
-        if len(segment) <=2:
+        if len(segment) <= 2:
             continue
-        elif segment[0].pose.position.x != segment[2].pose.position.x and segment[0].pose.position.y != segment[2].pose.position.y:
+        elif segment[0].pose.position.x != segment[2].pose.position.x and segment[0].pose.position.y != segment[
+            2].pose.position.y:
             attractors.poses.append(segment[0])
             attractors.poses.append(segment[2])
         else:
-            step_size = int(max(math.floor(float(len(segment)/assistance)), 1))
+            step_size = int(max(math.floor(float(len(segment) / assistance)), 1))
             attractors.poses.extend(segment[::step_size])
 
     return attractors
@@ -157,23 +161,26 @@ def reconstruct_path(came_from, start, goal):
     while current != start:
         path.append(current)
         current = came_from[current]
-    path.append(start) # optional
-    path.reverse() # optional
+    path.append(start)  # optional
+    path.reverse()  # optional
     return path
+
 
 def solve_into_segments(maze):
     print("called")
-    path_pub = rospy.Publisher("a_star", Path, queue_size=1,latch=True)
-    solution = a_star(maze) # returns the path of the complete solution
-    segments = break_into_segments(solution) # returns a list of paths, where each path is a straight or turn
-    attractors = get_attractor_list(segments, assistance=1) # turn list of paths into one list of points representing solution
-    lean_segments = break_into_lean_segments(solution) # returns a path of waypoints
+    path_pub = rospy.Publisher("a_star", Path, queue_size=1, latch=True)
+    solution = a_star(maze)  # returns the path of the complete solution
+    segments = break_into_segments(solution)  # returns a list of paths, where each path is a straight or turn
+    attractors = get_attractor_list(segments,
+                                    assistance=1)  # turn list of paths into one list of points representing solution
+    lean_segments = break_into_lean_segments(solution)  # returns a path of waypoints
     path_pub.publish(attractors)
-    #path_pub.publish(lean_segments)
+    # path_pub.publish(lean_segments)
+
 
 if __name__ == "__main__":
     rospy.init_node('MazeSolver', anonymous=True)
     rospy.Subscriber("gen_maze", OccupancyGrid, solve_into_segments)
     print("Ready to solve")
     while not rospy.is_shutdown():
-       rospy.spin()
+        rospy.spin()

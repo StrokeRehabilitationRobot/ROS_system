@@ -13,7 +13,6 @@ from collections import deque
 
 # holds the latest states obtained from joint_states messages
 class LatestJointStates:
-
     def __init__(self):
         queue_size = 10
         rospy.init_node('joint_states_listener')
@@ -60,7 +59,6 @@ class LatestJointStates:
         # return info for this joint
         self.lock.acquire()
 
-
         if joint_name in self.name and not len(self.velocity) == 0:
 
             index = self.name.index(joint_name)
@@ -71,7 +69,7 @@ class LatestJointStates:
         # unless it's not found
         else:
 
-            return (0, 0., 0., 0.)
+            return 0, 0., 0., 0.
 
         self.lock.release()
 
